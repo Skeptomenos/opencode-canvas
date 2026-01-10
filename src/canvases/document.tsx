@@ -1,8 +1,10 @@
-import { createSignal, createMemo, For, onMount } from "solid-js"
+import { createSignal, createMemo, For, onMount, Show } from "solid-js"
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import { TextAttributes } from "@opentui/core"
 import type { DocumentConfig, DocumentSelection, DocumentContent } from "./document/types"
 import { useIPCServer } from "./calendar/hooks/use-ipc-server"
+import { MarkdownLine, isCodeFence } from "./markdown-renderer"
+import { Editor } from "./editor/editor"
 
 export interface DocumentProps {
   id: string
@@ -10,6 +12,9 @@ export interface DocumentProps {
   socketPath?: string
   scenario: string
   onExit: () => void
+  embedded?: boolean
+  editable?: boolean
+  filePath?: string
 }
 
 export function Document(props: DocumentProps) {
@@ -66,7 +71,15 @@ export function Document(props: DocumentProps) {
   })
 
   useKeyboard((key) => {
-    if (key.name === "q" || key.name === "escape") {
+    const isEscape = key.name === "escape" || key.sequence === "\x1b"
+    const isQuit = key.name === "q"
+
+    if (props.embedded && (isEscape || isQuit)) {
+      props.onExit()
+      return
+    }
+
+    if (!props.embedded && isQuit) {
       ipc.sendCancelled("User cancelled")
       renderer.destroy()
       props.onExit()
@@ -139,27 +152,30 @@ export function Document(props: DocumentProps) {
     return lineIndex >= minLine && lineIndex <= maxLine
   }
 
-  const formatLine = (line: string, lineNum: number): string => {
-    if (format === "markdown") {
-      if (line.startsWith("# ")) return line
-      if (line.startsWith("## ")) return line
-      if (line.startsWith("### ")) return line
-      if (line.startsWith("- ") || line.startsWith("* ")) return line
-      if (line.match(/^\d+\. /)) return line
+  const codeBlockState = createMemo(() => {
+    const states: boolean[] = []
+    let inCode = false
+    for (const line of lines()) {
+      if (isCodeFence(line)) {
+        states.push(inCode)
+        inCode = !inCode
+      } else {
+        states.push(inCode)
+      }
     }
-    return line
-  }
+    return states
+  })
 
-  const getLineColor = (line: string): string => {
-    if (format === "markdown") {
-      if (line.startsWith("# ")) return "#00ffff"
-      if (line.startsWith("## ")) return "#00cccc"
-      if (line.startsWith("### ")) return "#009999"
-      if (line.startsWith("```")) return "#888888"
-      if (line.startsWith("> ")) return "#888888"
-      if (line.startsWith("- ") || line.startsWith("* ")) return "#aaaaaa"
-    }
-    return "#ffffff"
+  if (props.editable) {
+    return (
+      <Editor
+        content={content}
+        filePath={props.filePath ?? null}
+        title={title}
+        onExit={props.onExit}
+        embedded={props.embedded}
+      />
+    )
   }
 
   return (
@@ -194,17 +210,25 @@ export function Document(props: DocumentProps) {
             const isCursor = actualLineIndex === cursorLine()
             const isSelected = isLineSelected(actualLineIndex)
 
+            const inCodeBlock = codeBlockState()[actualLineIndex] || false
+            const lineNumWidth = 5
+            const maxLineWidth = dimensions().width - lineNumWidth - 2
+            const displayLine = line.length > maxLineWidth ? line.slice(0, maxLineWidth - 1) + "…" : line
+
             return (
               <box
+                flexDirection="row"
                 backgroundColor={isCursor ? "#333366" : isSelected ? "#333333" : undefined}
                 width={dimensions().width}
               >
-                <box width={5} paddingRight={1}>
-                  <text fg="#555555">{(actualLineIndex + 1).toString().padStart(4)}</text>
-                </box>
-                <text attributes={isCursor ? TextAttributes.BOLD : 0} fg={getLineColor(line)}>
-                  {formatLine(line, actualLineIndex) || " "}
-                </text>
+                <text fg="#555555">{(actualLineIndex + 1).toString().padStart(4)} </text>
+                {format === "markdown" ? (
+                  <MarkdownLine line={displayLine || " "} inCodeBlock={inCodeBlock} />
+                ) : (
+                  <text attributes={isCursor ? TextAttributes.BOLD : 0} fg="#ffffff">
+                    {displayLine || " "}
+                  </text>
+                )}
               </box>
             )
           }}

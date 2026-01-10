@@ -106,7 +106,7 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Essential for editing confidence. Keep operations atomic for predictable undo."
     },
     {
@@ -123,7 +123,7 @@
         "Typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Line operations are the most common vim editing pattern."
     },
     {
@@ -138,7 +138,7 @@
         "Typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Quality of life improvements for vim users."
     },
     {
@@ -152,7 +152,7 @@
         "Typecheck passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Common vim navigation. Keep word definition simple."
     },
     {
@@ -166,7 +166,7 @@
         "Typecheck passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Simple single-character delete."
     },
     {
@@ -183,7 +183,7 @@
         "Typecheck passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Safety feature. Check restrictions when opening file, not on every keystroke."
     },
     {
@@ -198,7 +198,7 @@
         "Typecheck passes"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "Integration story. Editor should replace viewer when editing is enabled."
     },
     {

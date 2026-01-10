@@ -78,3 +78,111 @@ Started: Sat Jan 10 09:45:40 CET 2026
   - forceQuit() is used for :q! command, bypasses isDirty check
   - The :wq command is parsed in editor-command.ts as "save_quit" type
 ---
+
+## Sat Jan 10 2026 - US-006
+- What was implemented: Undo and redo functionality
+- Files changed:
+  - src/canvases/editor/editor-undo.ts (new file)
+- **Learnings for future iterations:**
+  - UndoState has two stacks: undoStack and redoStack (both UndoOperation[])
+  - UndoOperation stores complete snapshots: beforeLines/afterLines, before/after cursor positions
+  - MAX_UNDO_STACK_SIZE = 100 operations
+  - pushUndoOperation() clears redoStack (redo history lost when new edit made)
+  - performUndo() pops from undoStack, creates inverse operation, pushes to redoStack
+  - performRedo() pops from redoStack, creates inverse operation, pushes to undoStack
+  - clearUndoStack() clears both stacks (called on save)
+  - createUndoOperation() is a factory for creating operations from before/after state
+  - shouldTriggerUndo() checks for 'u' key (no ctrl) in normal mode
+  - shouldTriggerRedo() checks for Ctrl+R in normal mode
+  - Consumer must call pushUndoOperation() after every state-changing edit (insertChar, deleteChar, etc.)
+---
+
+## Sat Jan 10 2026 - US-007
+- What was implemented: Line operations (dd, yy, p, P)
+- Files changed:
+  - src/canvases/editor/editor-clipboard.ts (new file)
+- **Learnings for future iterations:**
+  - ClipboardState holds content: { type: "line", lines: string[] } | null
+  - yankLine (yy) copies current line to clipboard without modifying state
+  - deleteLine (dd) removes current line, copies to clipboard, sets isDirty
+  - pasteAfter (p) inserts clipboard lines after cursor line, moves cursor to first pasted line
+  - pasteBefore (P) inserts clipboard lines before cursor line
+  - Detection functions use lastKey pattern for double-key commands (dd, yy)
+  - shouldTriggerYankLine() and shouldTriggerDeleteLine() check key.name === "y"/"d" && lastKey === "y"/"d"
+  - shouldTriggerPasteAfter() checks key.name === "p" without ctrl
+  - shouldTriggerPasteBefore() checks key.sequence === "P" (capital P)
+  - When deleting last line, ensure lines array still has at least one empty line
+  - After delete, clamp cursor to new line bounds
+---
+
+## Sat Jan 10 2026 - US-008
+- What was implemented: Additional insert mode commands (o, O, A, I)
+- Files changed: src/canvases/editor/editor-insert.ts
+- **Learnings for future iterations:**
+  - openLineBelow (o) inserts new line after current, enters insert mode at col 0, sets isDirty
+  - openLineAbove (O) inserts new line at current position (pushing current down), enters insert mode at col 0
+  - enterInsertModeAtEnd (A) moves cursor to line.length and enters insert mode
+  - enterInsertModeAtStart (I) moves cursor to col 0 and enters insert mode
+  - All four functions check isReadOnly before modifying state
+  - Detection functions should check key.sequence for capital letters (O, A, I)
+---
+
+## Sat Jan 10 2026 - US-009
+- What was implemented: Word navigation (w, b) for vim-style movement
+- Files changed: src/canvases/editor/editor-navigation.ts
+- **Learnings for future iterations:**
+  - moveToNextWord (w) skips current token, then whitespace, lands on next word/punctuation start
+  - moveToPreviousWord (b) moves back one position, skips whitespace backward, finds token start
+  - Word characters are defined as /[a-zA-Z0-9_]/ (alphanumeric + underscore)
+  - Three token types: word (alphanumeric), whitespace, punctuation (everything else)
+  - Helper functions: isWordChar(), isWhitespace(), isPunctuation(), skipWhitespaceForward/Backward()
+  - When crossing line boundaries, skip leading/trailing whitespace on adjacent lines
+  - Use getMaxCol() helper to handle insert vs normal mode cursor bounds
+  - Detection: key.name === "w" for next word, key.name === "b" for previous word (in normal mode)
+---
+
+## Sat Jan 10 2026 - US-010
+- What was implemented: x command to delete character under cursor in normal mode
+- Files changed: src/canvases/editor/editor-insert.ts
+- **Learnings for future iterations:**
+  - deleteCharUnderCursor() deletes character at cursor position in normal mode only
+  - Returns unchanged state if line is empty or cursor is past end of line
+  - After deletion, cursor moves left if it would be past end of line (newLine.length - 1)
+  - Uses same pure function pattern as other edit functions: (EditorState) => EditorState
+  - shouldTriggerDeleteCharUnderCursor(key, mode) checks: mode === "normal" && key.name === "x" && !key.ctrl
+  - Works with undo via the standard createUndoOperation() before/after pattern
+---
+
+## Sat Jan 10 2026 - US-011
+- What was implemented: Read-only restrictions for files
+- Files changed:
+  - src/canvases/editor/editor-state.ts (added ReadOnlyReason type, isReadOnlyReason field)
+  - src/canvases/editor/editor-readonly.ts (new file)
+- **Learnings for future iterations:**
+  - ReadOnlyReason is a union type: "node_modules" | "git_directory" | "binary_file" | "file_too_large" | null
+  - checkReadOnly(filePath) returns { isReadOnly: boolean, reason: ReadOnlyReason }
+  - isInNodeModules() checks for /node_modules/ or \\node_modules\\ in path
+  - isInGitDirectory() checks for /.git/ or \\.git\\ in path
+  - isFileTooLarge() uses MAX_FILE_SIZE_BYTES = 1MB
+  - isBinaryFile() checks first 8KB for null bytes
+  - getReadOnlyReasonMessage() returns human-readable explanation for each reason
+  - getReadOnlyStatusIndicator() returns "[Read-only]" string for status bar
+  - Checking is done at file open time, not on every keystroke
+---
+
+## Sat Jan 10 2026 - US-012
+- What was implemented: Integrated editor with document.tsx for editable file viewing
+- Files changed:
+  - src/canvases/editor/editor.tsx (new file - full vim-like editor component)
+  - src/canvases/document.tsx (added editable and filePath props, conditionally renders Editor)
+  - src/canvases/file-viewer.tsx (passes editable=true for non-readonly files)
+  - src/canvases/tree-file-viewer.tsx (passes editable=true for non-readonly files)
+- **Learnings for future iterations:**
+  - Editor component integrates all editor-* modules into a complete vim editor
+  - DocumentProps now includes: editable?: boolean, filePath?: string
+  - When editable=true, Document renders Editor instead of the read-only viewer
+  - file-viewer.tsx and tree-file-viewer.tsx use checkReadOnly() to determine editability
+  - isEditable signal tracks whether the opened file can be edited
+  - Editor uses onCleanup pattern - not needed in current impl but good to remember for future
+  - Text elements in OpenTUI don't support backgroundColor - wrap in box for background colors
+---
