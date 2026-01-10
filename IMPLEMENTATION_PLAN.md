@@ -11,6 +11,7 @@
 Port [dvdsgl/claude-canvas](https://github.com/dvdsgl/claude-canvas) from React/Ink to SolidJS/OpenTUI for native OpenCode integration. The original uses React hooks and Ink components; we'll translate to SolidJS signals and OpenTUI primitives.
 
 ### Key Insight
+
 OpenCode already uses `@opentui/solid` for its TUI. This is the **same framework** we'll use, making this a straightforward translation rather than a rewrite.
 
 ---
@@ -25,6 +26,7 @@ bun init
 ```
 
 **package.json:**
+
 ```json
 {
   "name": "opencode-canvas",
@@ -53,6 +55,7 @@ bun init
 ```
 
 **tsconfig.json:**
+
 ```json
 {
   "extends": "@tsconfig/bun/tsconfig.json",
@@ -67,6 +70,7 @@ bun init
 ```
 
 **bunfig.toml:**
+
 ```toml
 preload = ["@opentui/solid/preload"]
 ```
@@ -109,6 +113,7 @@ skills/
 ```
 
 ### Deliverables
+
 - [ ] package.json with correct dependencies
 - [ ] tsconfig.json with OpenTUI JSX config
 - [ ] bunfig.toml with preload
@@ -271,6 +276,7 @@ describe("IPC Server", () => {
 ```
 
 ### Deliverables
+
 - [ ] `src/ipc/types.ts` - Message types
 - [ ] `src/ipc/server.ts` - Unix socket server
 - [ ] `src/ipc/client.ts` - Unix socket client
@@ -312,7 +318,7 @@ export async function spawnCanvas(
   }
 
   const socketPath = options?.socketPath || `/tmp/canvas-${id}.sock`
-  
+
   // Build command
   let command = `bun run ${import.meta.dir}/cli.ts show ${kind} --id ${id}`
   if (configJson) {
@@ -362,7 +368,9 @@ async function createNewPane(command: string): Promise<boolean> {
     const args = ["split-window", "-h", "-p", "67", "-P", "-F", "#{pane_id}", command]
     const proc = spawn("tmux", args)
     let paneId = ""
-    proc.stdout?.on("data", (data) => { paneId += data.toString() })
+    proc.stdout?.on("data", (data) => {
+      paneId += data.toString()
+    })
     proc.on("close", async (code) => {
       if (code === 0 && paneId.trim()) {
         await saveCanvasPaneId(paneId.trim())
@@ -390,6 +398,7 @@ async function reuseExistingPane(paneId: string, command: string): Promise<boole
 ```
 
 ### Deliverables
+
 - [ ] `src/terminal.ts` - tmux detection and spawning
 - [ ] Pane reuse logic working
 - [ ] Manual test: `bun run src/cli.ts spawn calendar` opens split pane
@@ -409,10 +418,7 @@ function setWindowTitle(title: string) {
   process.stdout.write(`\x1b]0;${title}\x07`)
 }
 
-program
-  .name("opencode-canvas")
-  .description("Interactive terminal canvases for OpenCode")
-  .version("0.1.0")
+program.name("opencode-canvas").description("Interactive terminal canvases for OpenCode").version("0.1.0")
 
 program
   .command("show [kind]")
@@ -461,6 +467,7 @@ program.parse()
 ```
 
 ### Deliverables
+
 - [ ] `src/cli.ts` - Full CLI with show/spawn/env commands
 - [ ] `bun run src/cli.ts --help` works
 - [ ] `bun run src/cli.ts env` shows tmux status
@@ -493,15 +500,13 @@ export interface RenderOptions {
   scenario?: string
 }
 
-export async function renderCanvas(
-  kind: string,
-  id: string,
-  config?: unknown,
-  options?: RenderOptions
-): Promise<void> {
+export async function renderCanvas(kind: string, id: string, config?: unknown, options?: RenderOptions): Promise<void> {
   clearScreen()
   process.on("exit", showCursor)
-  process.on("SIGINT", () => { showCursor(); process.exit() })
+  process.on("SIGINT", () => {
+    showCursor()
+    process.exit()
+  })
 
   switch (kind) {
     case "calendar":
@@ -518,12 +523,7 @@ export async function renderCanvas(
 
 async function renderCalendar(id: string, config?: CalendarConfig, options?: RenderOptions) {
   const { waitUntilExit } = render(() => (
-    <Calendar
-      id={id}
-      config={config}
-      socketPath={options?.socketPath}
-      scenario={options?.scenario || "display"}
-    />
+    <Calendar id={id} config={config} socketPath={options?.socketPath} scenario={options?.scenario || "display"} />
   ))
   await waitUntilExit()
 }
@@ -534,6 +534,7 @@ async function renderCalendar(id: string, config?: CalendarConfig, options?: Ren
 ### 5.2 Translation Pattern (React/Ink -> SolidJS/OpenTUI)
 
 **Original React/Ink:**
+
 ```tsx
 import React, { useState, useEffect } from "react"
 import { Box, Text, useInput, useApp, useStdout } from "ink"
@@ -552,7 +553,7 @@ function Calendar({ config }) {
 
   useInput((input, key) => {
     if (input === "q") exit()
-    if (key.downArrow) setSelected(s => s + 1)
+    if (key.downArrow) setSelected((s) => s + 1)
   })
 
   return (
@@ -564,6 +565,7 @@ function Calendar({ config }) {
 ```
 
 **Translated SolidJS/OpenTUI:**
+
 ```tsx
 import { createSignal, createEffect, onCleanup } from "solid-js"
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
@@ -575,7 +577,7 @@ function Calendar(props: { config?: CalendarConfig }) {
 
   useKeyboard((key) => {
     if (key.name === "q" || key.name === "escape") renderer.exit()
-    if (key.name === "down") setSelected(s => s + 1)
+    if (key.name === "down") setSelected((s) => s + 1)
   })
 
   return (
@@ -589,6 +591,7 @@ function Calendar(props: { config?: CalendarConfig }) {
 ### 5.3 Component Porting Checklist
 
 #### Calendar Canvas (`src/canvases/calendar.tsx`)
+
 - [ ] Port main Calendar component
 - [ ] Port DayColumn component
 - [ ] Port DayHeadersRow component
@@ -599,13 +602,16 @@ function Calendar(props: { config?: CalendarConfig }) {
 - [ ] Port event rendering with colors
 
 #### Calendar Hooks (`src/canvases/calendar/hooks/`)
+
 - [ ] Port `use-ipc-server.ts` to SolidJS (createSignal, onCleanup)
 - [ ] Port `use-mouse.ts` if needed
 
 #### Calendar Scenarios (`src/canvases/calendar/scenarios/`)
+
 - [ ] Port `meeting-picker-view.tsx`
 
 #### Document Canvas (`src/canvases/document.tsx`)
+
 - [ ] Port main Document component
 - [ ] Port scroll handling
 - [ ] Port cursor/selection state
@@ -613,11 +619,13 @@ function Calendar(props: { config?: CalendarConfig }) {
 - [ ] Port IPC integration (getSelection, getContent)
 
 #### Document Components (`src/canvases/document/components/`)
+
 - [ ] Port `raw-markdown-renderer.tsx`
 - [ ] Port `email-header.tsx`
 - [ ] Port `markdown-renderer.tsx`
 
 #### Flight Canvas (`src/canvases/flight.tsx`)
+
 - [ ] Port main FlightCanvas component
 - [ ] Port flight comparison view
 - [ ] Port seat selection view
@@ -692,6 +700,7 @@ export function useIPCServer(options: UseIPCServerOptions) {
 ```
 
 ### Deliverables
+
 - [ ] `src/canvases/index.tsx` - Canvas registry
 - [ ] `src/canvases/calendar.tsx` - Full calendar port
 - [ ] `src/canvases/calendar/hooks/use-ipc-server.ts` - IPC hook
@@ -787,14 +796,13 @@ export async function spawnCanvasWithIPC<TConfig, TResult>(
       }
     }, timeout)
 
-    spawnCanvas(kind, id, JSON.stringify(config), { socketPath, scenario })
-      .catch((err) => {
-        if (!resolved) {
-          resolved = true
-          cleanup()
-          resolve({ success: false, error: err.message })
-        }
-      })
+    spawnCanvas(kind, id, JSON.stringify(config), { socketPath, scenario }).catch((err) => {
+      if (!resolved) {
+        resolved = true
+        cleanup()
+        resolve({ success: false, error: err.message })
+      }
+    })
   })
 }
 
@@ -809,6 +817,7 @@ export async function editDocument(config: DocumentConfig) {
 ```
 
 ### Deliverables
+
 - [ ] `src/api/canvas-api.ts` - High-level API
 - [ ] `src/api/index.ts` - Exports
 - [ ] API tests pass
@@ -832,20 +841,23 @@ description: |
 ## Quick Start
 
 \`\`\`bash
+
 # Show canvas in current terminal
+
 bun run src/cli.ts show calendar
 
 # Spawn in tmux split (interactive)
+
 bun run src/cli.ts spawn calendar --scenario meeting-picker --config '{...}'
 \`\`\`
 
 ## Canvas Types
 
-| Canvas | Scenarios | Purpose |
-|--------|-----------|---------|
-| calendar | display, meeting-picker | Show calendars, pick meeting times |
-| document | display, edit, email-preview | View/edit markdown |
-| flight | booking | Compare flights, select seats |
+| Canvas   | Scenarios                    | Purpose                            |
+| -------- | ---------------------------- | ---------------------------------- |
+| calendar | display, meeting-picker      | Show calendars, pick meeting times |
+| document | display, edit, email-preview | View/edit markdown                 |
+| flight   | booking                      | Compare flights, select seats      |
 
 ## IPC Protocol
 
@@ -860,12 +872,12 @@ Canvas communicates via Unix sockets at `/tmp/canvas-{id}.sock`
 import { pickMeetingTime, editDocument } from "./src/api"
 
 const result = await pickMeetingTime({
-  calendars: [...],
-  slotGranularity: 30,
+calendars: [...],
+slotGranularity: 30,
 })
 
 if (result.success && result.data) {
-  console.log(\`Selected: \${result.data.startTime}\`)
+console.log(\`Selected: \${result.data.startTime}\`)
 }
 \`\`\`
 ```
@@ -877,6 +889,7 @@ if (result.success && result.data) {
 ### 7.4 Flight Skill (`skills/flight/SKILL.md`)
 
 ### Deliverables
+
 - [ ] `skills/canvas/SKILL.md`
 - [ ] `skills/calendar/SKILL.md`
 - [ ] `skills/document/SKILL.md`
@@ -918,6 +931,7 @@ src/
 - [ ] Inline code comments
 
 ### Deliverables
+
 - [ ] All tests pass
 - [ ] Manual testing complete
 - [ ] Documentation updated
@@ -926,12 +940,12 @@ src/
 
 ## Risk Mitigation
 
-| Risk | Mitigation |
-|------|------------|
-| OpenTUI API differences | Reference OpenCode TUI code extensively |
-| Mouse handling complexity | Defer mouse support to v2 if needed |
-| Complex markdown rendering | Use OpenTUI's built-in Code component |
-| tmux edge cases | Graceful error messages, require tmux |
+| Risk                       | Mitigation                              |
+| -------------------------- | --------------------------------------- |
+| OpenTUI API differences    | Reference OpenCode TUI code extensively |
+| Mouse handling complexity  | Defer mouse support to v2 if needed     |
+| Complex markdown rendering | Use OpenTUI's built-in Code component   |
+| tmux edge cases            | Graceful error messages, require tmux   |
 
 ---
 
@@ -947,17 +961,17 @@ src/
 
 ## File Count Estimate
 
-| Category | Files | Lines (est.) |
-|----------|-------|--------------|
-| IPC | 4 | ~200 |
-| Terminal | 1 | ~100 |
-| CLI | 1 | ~100 |
-| Canvases | 10 | ~1500 |
-| API | 2 | ~150 |
-| Skills | 4 | ~300 |
-| Tests | 5 | ~300 |
-| Config | 4 | ~50 |
-| **Total** | **~31** | **~2700** |
+| Category  | Files   | Lines (est.) |
+| --------- | ------- | ------------ |
+| IPC       | 4       | ~200         |
+| Terminal  | 1       | ~100         |
+| CLI       | 1       | ~100         |
+| Canvases  | 10      | ~1500        |
+| API       | 2       | ~150         |
+| Skills    | 4       | ~300         |
+| Tests     | 5       | ~300         |
+| Config    | 4       | ~50          |
+| **Total** | **~31** | **~2700**    |
 
 ---
 

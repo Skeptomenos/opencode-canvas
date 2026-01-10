@@ -98,12 +98,7 @@ export async function pickMeetingTime(
   config: MeetingPickerConfig,
   options?: SpawnOptions
 ): Promise<CanvasResult<MeetingPickerResult>> {
-  return spawnCanvasWithIPC<MeetingPickerConfig, MeetingPickerResult>(
-    "calendar",
-    "meeting-picker",
-    config,
-    options
-  )
+  return spawnCanvasWithIPC<MeetingPickerConfig, MeetingPickerResult>("calendar", "meeting-picker", config, options)
 }
 
 export interface EditDocumentConfig extends DocumentConfig {
@@ -114,22 +109,14 @@ export async function editDocument(
   config: EditDocumentConfig,
   options?: SpawnOptions
 ): Promise<CanvasResult<DocumentSelection>> {
-  return spawnCanvasWithIPC<EditDocumentConfig, DocumentSelection>(
-    "document",
-    "edit",
-    config,
-    options
-  )
+  return spawnCanvasWithIPC<EditDocumentConfig, DocumentSelection>("document", "edit", config, options)
 }
 
 export interface ViewDocumentConfig extends DocumentConfig {
   title?: string
 }
 
-export async function viewDocument(
-  config: ViewDocumentConfig,
-  options?: SpawnOptions
-): Promise<CanvasResult<void>> {
+export async function viewDocument(config: ViewDocumentConfig, options?: SpawnOptions): Promise<CanvasResult<void>> {
   return spawnCanvasWithIPC<ViewDocumentConfig, void>("document", "display", config, options)
 }
 
@@ -137,10 +124,7 @@ export interface BookFlightConfig extends FlightConfig {
   title?: string
 }
 
-export async function bookFlight(
-  config: BookFlightConfig,
-  options?: SpawnOptions
-): Promise<CanvasResult<Flight>> {
+export async function bookFlight(config: BookFlightConfig, options?: SpawnOptions): Promise<CanvasResult<Flight>> {
   return spawnCanvasWithIPC<BookFlightConfig, Flight>("flight", "booking", config, options)
 }
 

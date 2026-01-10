@@ -27,9 +27,7 @@ export function Calendar(props: CalendarProps) {
   const endHour = config.endHour ?? DEFAULT_END_HOUR
   const slotGranularity = config.slotGranularity ?? DEFAULT_SLOT_GRANULARITY
 
-  const [currentDate, setCurrentDate] = createSignal(
-    config.initialDate ? new Date(config.initialDate) : new Date()
-  )
+  const [currentDate, setCurrentDate] = createSignal(config.initialDate ? new Date(config.initialDate) : new Date())
   const [selectedDay, setSelectedDay] = createSignal(0)
   const [selectedSlot, setSelectedSlot] = createSignal(0)
 
@@ -164,9 +162,7 @@ export function Calendar(props: CalendarProps) {
         <text attributes={TextAttributes.BOLD} fg="#00ffff">
           {monthYear()}
         </text>
-        <text fg="#808080">
-          [←/→] Day [↑/↓] Time [Enter] Select [t] Today [q] Quit
-        </text>
+        <text fg="#808080">[←/→] Day [↑/↓] Time [Enter] Select [t] Today [q] Quit</text>
       </box>
 
       <box flexDirection="row" paddingLeft={1} paddingRight={1} marginTop={1}>
@@ -204,15 +200,14 @@ export function Calendar(props: CalendarProps) {
                     })
 
                     return (
-                      <box
-                        width={colWidth()}
-                        backgroundColor={isSelected ? "#333366" : undefined}
-                      >
+                      <box width={colWidth()} backgroundColor={isSelected ? "#333366" : undefined}>
                         <text
                           attributes={isSelected ? TextAttributes.BOLD : 0}
-                          fg={slotEvent ? (slotEvent.color || "#ffaa00") : (isSelected ? "#ffffff" : "#444444")}
+                          fg={slotEvent ? slotEvent.color || "#ffaa00" : isSelected ? "#ffffff" : "#444444"}
                         >
-                          {slotEvent ? slotEvent.title.slice(0, colWidth() - 2) : "─".repeat(Math.max(0, colWidth() - 2))}
+                          {slotEvent
+                            ? slotEvent.title.slice(0, colWidth() - 2)
+                            : "─".repeat(Math.max(0, colWidth() - 2))}
                         </text>
                       </box>
                     )

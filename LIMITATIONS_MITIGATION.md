@@ -3,6 +3,7 @@
 **Purpose**: Proactive identification and prevention of known risks during implementation.
 
 **Structure**:
+
 - Risk severity levels (CRITICAL, HIGH, MEDIUM, LOW)
 - Specific mitigation steps per risk
 - Prevention checklist
@@ -27,6 +28,7 @@
 ## C1: Pane Reuse Race Condition
 
 **Risk**: Terminal spawning uses `/tmp/opencode-canvas-pane-id` file to track panes. Concurrent spawns can:
+
 - Read stale pane ID (process exited)
 - Both write simultaneously → corrupted file
 - Reuse pane with wrong command still running
@@ -43,10 +45,10 @@ async function getCanvasPaneId(): Promise<string | null> {
     const file = Bun.file(CANVAS_PANE_FILE)
     if (await file.exists()) {
       const paneId = (await file.text()).trim()
-      
+
       // Validate pane still exists
       const result = spawnSync("tmux", ["display-message", "-t", paneId, "-p", "#{pane_id}"])
-      
+
       if (result.status === 0) {
         const actualId = result.stdout?.toString().trim()
         if (actualId === paneId) {
@@ -56,12 +58,12 @@ async function getCanvasPaneId(): Promise<string | null> {
       }
     }
   } catch {}
-  
+
   // Delete stale file
   try {
     await Bun.file(CANVAS_PANE_FILE).delete()
   } catch {}
-  
+
   return null
 }
 ```
@@ -76,7 +78,7 @@ const LOCK_FILE = CANVAS_PANE_FILE + ".lock"
 async function withLock<T>(fn: () => Promise<T>): Promise<T> {
   let lockPath: string | undefined
   try {
-    lockPath = await lock(LOCK_FILE, { stale: 5000 })  // 5s timeout
+    lockPath = await lock(LOCK_FILE, { stale: 5000 }) // 5s timeout
     return await fn()
   } finally {
     if (lockPath) await unlock(lockPath)
@@ -116,12 +118,12 @@ async function spawnCanvas(...): Promise<{ method: string }> {
 async function reuseExistingPane(paneId: string, command: string): Promise<boolean> {
   return new Promise((resolve) => {
     const killProc = spawn("tmux", ["send-keys", "-t", paneId, "C-c"])
-    
+
     const timeout = setTimeout(() => {
       killProc.kill()
-      resolve(false)  // Timeout = reuse failed
+      resolve(false) // Timeout = reuse failed
     }, 2000)
-    
+
     killProc.on("close", () => {
       clearTimeout(timeout)
       setTimeout(() => {
@@ -140,6 +142,7 @@ async function reuseExistingPane(paneId: string, command: string): Promise<boole
 ```
 
 **Prevention Checklist**:
+
 - [ ] Add pane validation check (tmux display-message)
 - [ ] Implement lockfile mechanism
 - [ ] Test concurrent spawns (run `spawn canvas` twice rapidly)
@@ -156,6 +159,7 @@ async function reuseExistingPane(paneId: string, command: string): Promise<boole
 ## C2: Socket Cleanup on Abnormal Exit
 
 **Risk**: IPC server holds Unix socket open. If canvas exits via:
+
 - SIGKILL (kill -9)
 - Panic/crash
 - Parent process killed
@@ -290,13 +294,14 @@ createEffect(() => {
   const cleanup = () => {
     ipc.sendCancelled("window closed")
   }
-  
+
   window?.addEventListener?.("beforeunload", cleanup)
   return () => window?.removeEventListener?.("beforeunload", cleanup)
 })
 ```
 
 **Prevention Checklist**:
+
 - [ ] Ensure signal handlers installed before render
 - [ ] Test socket cleanup after SIGINT
 - [ ] Test stale socket removal on restart
@@ -313,6 +318,7 @@ createEffect(() => {
 ## C3: Prettier & Code Style Not Enforced
 
 **Risk**: AGENTS.md specifies code style (no semicolons, 120 char width) but:
+
 - No `.prettierrc` file in Phase 1
 - No pre-commit hooks
 - No lint CI check
@@ -378,14 +384,15 @@ bun run format:check || exit 1
 ## Development
 
 \`\`\`bash
-bun run format:check   # Check formatting
-bun run format         # Auto-fix formatting
-bun run lint           # Format + typecheck
-bun test               # Run tests
+bun run format:check # Check formatting
+bun run format # Auto-fix formatting
+bun run lint # Format + typecheck
+bun test # Run tests
 \`\`\`
 ```
 
 **Prevention Checklist**:
+
 - [ ] Add `.prettierrc` to Phase 1 deliverables
 - [ ] Add `prettier` to devDependencies
 - [ ] Create `.prettierignore`
@@ -403,6 +410,7 @@ bun test               # Run tests
 ## H1: IPC Test Coverage Insufficient
 
 **Risk**: IMPLEMENTATION_PLAN.md Phase 2.4 shows only 1 basic test. Missing coverage for:
+
 - Message parsing (invalid JSON, malformed)
 - Broadcast to multiple clients
 - Error callbacks
@@ -459,11 +467,11 @@ describe("IPC Server", () => {
 
     const client = await createIPCClient(socketPath)
     await client.send({ type: "close" })
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
     expect(messages).toHaveLength(1)
     expect(messages[0].type).toBe("close")
-    
+
     client.close()
     server.close()
   })
@@ -482,7 +490,7 @@ describe("IPC Server", () => {
     client2.onMessage((msg) => received.push({ client: 2, msg }))
 
     server.broadcast({ type: "ready", scenario: "test" })
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(received).toHaveLength(2)
     expect(received[0].msg.type).toBe("ready")
@@ -502,7 +510,7 @@ describe("IPC Server", () => {
 
     const client = await createIPCClient(socketPath)
     client.socket.write("{ invalid json }\n")
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(errors.length).toBeGreaterThan(0)
     expect(errors[0].message).toContain("Failed to parse")
@@ -517,10 +525,10 @@ describe("IPC Server", () => {
       onMessage: () => {},
     })
     expect(await Bun.file(socketPath).exists()).toBe(true)
-    
+
     server.close()
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
     expect(await Bun.file(socketPath).exists()).toBe(false)
   })
 
@@ -534,11 +542,11 @@ describe("IPC Server", () => {
     })
 
     const client = await createIPCClient(socketPath)
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
     expect(events).toContain("connect")
 
     client.close()
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
     expect(events).toContain("disconnect")
 
     server.close()
@@ -559,7 +567,7 @@ describe("IPC Client", () => {
 
     const client = await createIPCClient(socketPath)
     expect(client).toBeDefined()
-    
+
     client.close()
     server.close()
   })
@@ -573,7 +581,7 @@ describe("IPC Client", () => {
 
     const client = await createIPCClient(socketPath)
     await client.send({ type: "ping" })
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(messages).toHaveLength(1)
     expect(messages[0].type).toBe("ping")
@@ -593,7 +601,7 @@ describe("IPC Client", () => {
     client.onMessage((msg) => received.push(msg))
 
     server.broadcast({ type: "pong" })
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(received).toHaveLength(1)
     expect(received[0].type).toBe("pong")
@@ -605,6 +613,7 @@ describe("IPC Client", () => {
 ```
 
 3. **Set test count targets**:
+
 - IPC Server: ≥6 tests
 - IPC Client: ≥3 tests
 - Terminal: ≥3 tests
@@ -612,6 +621,7 @@ describe("IPC Client", () => {
 - **Total**: ≥23 tests
 
 **Prevention Checklist**:
+
 - [ ] Write tests BEFORE implementing features (TDD)
 - [ ] Aim for ≥75% code coverage on IPC
 - [ ] Test error paths (invalid JSON, timeout, disconnect)
@@ -650,12 +660,12 @@ describe("Terminal Detection", () => {
 describe("Canvas Spawning", () => {
   // Note: These tests may require tmux to be running
   // Skip if not in tmux
-  
+
   test("throws error if not in tmux", async () => {
     if (process.env.TMUX) {
       test.skip("Running in tmux, skipping")
     }
-    
+
     try {
       await spawnCanvas("calendar", "test-1")
       expect.unreachable()
@@ -692,6 +702,7 @@ function withMockSpawn(mock: Partial<SpawnMock>, fn: () => Promise<void>) {
 ```
 
 **Prevention Checklist**:
+
 - [ ] Add terminal.test.ts in Phase 3
 - [ ] Test detectTerminal() function
 - [ ] Test pane validation logic
@@ -707,6 +718,7 @@ function withMockSpawn(mock: Partial<SpawnMock>, fn: () => Promise<void>) {
 ## H3: Version Pinning & Dependency Management
 
 **Risk**: IMPLEMENTATION_PLAN.md specifies:
+
 - `@types/bun: latest` (drifts, breaks compatibility)
 - `commander: ^14.0.0` (OK, minor version safe)
 - `@opentui/core/solid: 0.1.72` (good, pinned)
@@ -714,6 +726,7 @@ function withMockSpawn(mock: Partial<SpawnMock>, fn: () => Promise<void>) {
 - `typescript: ^5` (major version drift possible)
 
 Unpinned versions can cause:
+
 - Sudden breaking changes
 - Incompatible types
 - CI flakiness
@@ -745,15 +758,15 @@ Unpinned versions can cause:
 ```markdown
 ## Dependencies
 
-| Package | Version | Reason |
-|---------|---------|--------|
-| @opentui/core | 0.1.72 | OpenCode compatibility (TUI toolkit) |
-| @opentui/solid | 0.1.72 | OpenCode TUI for SolidJS |
-| solid-js | 1.9.9 | @opentui/solid peer dependency |
-| commander | 14.0.0 | CLI argument parsing |
-| typescript | 5.3.0 | Type checking |
-| prettier | 3.0.0 | Code formatting |
-| @types/bun | 1.1.0 | Bun runtime types |
+| Package        | Version | Reason                               |
+| -------------- | ------- | ------------------------------------ |
+| @opentui/core  | 0.1.72  | OpenCode compatibility (TUI toolkit) |
+| @opentui/solid | 0.1.72  | OpenCode TUI for SolidJS             |
+| solid-js       | 1.9.9   | @opentui/solid peer dependency       |
+| commander      | 14.0.0  | CLI argument parsing                 |
+| typescript     | 5.3.0   | Type checking                        |
+| prettier       | 3.0.0   | Code formatting                      |
+| @types/bun     | 1.1.0   | Bun runtime types                    |
 
 **Why pinned**: OpenCode TUI versions are tightly coupled. Minor version drifts can break compatibility.
 ```
@@ -769,6 +782,7 @@ bunx tsc --version
 ```
 
 **Prevention Checklist**:
+
 - [ ] Pin all versions in package.json
 - [ ] Document why each version is chosen
 - [ ] Run `bun install` to lock lockfile
@@ -815,7 +829,7 @@ export function Calendar(props: CalendarProps): JSX.Element {
 
   // Wait for IPC server to be ready
   createEffect(async () => {
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       const check = () => {
         if (ipc.isConnected()) {
           ipc.sendReady()
@@ -886,11 +900,14 @@ export function useIPCServer(options: UseIPCServerOptions) {
     }
   })
 
-  return { /* ... */ }
+  return {
+    /* ... */
+  }
 }
 ```
 
 **Prevention Checklist**:
+
 - [ ] Add initialization sentinel in components
 - [ ] Queue early messages
 - [ ] Wait for IPC server before sendReady()
@@ -931,22 +948,27 @@ Interactive terminal-based calendar with week view, event display, and meeting t
 ## Quick Start
 
 \`\`\`bash
+
 # Show calendar in current terminal
+
 bun run src/cli.ts show calendar
 
 # Spawn in tmux split (interactive)
+
 bun run src/cli.ts spawn calendar --scenario meeting-picker --config '{
-  "events": [...],
-  "slotGranularity": 30
+"events": [...],
+"slotGranularity": 30
 }'
 \`\`\`
 
 ## Scenarios
 
 ### display
+
 Show calendar with events. No interaction required.
 
 ### meeting-picker
+
 Allow user to select 30-min time slots for scheduling.
 
 ## API Usage
@@ -955,45 +977,45 @@ Allow user to select 30-min time slots for scheduling.
 import { pickMeetingTime } from "@/api"
 
 const result = await pickMeetingTime({
-  events: [
-    { id: "1", title: "Meeting", startTime: "2025-01-13T10:00", endTime: "2025-01-13T11:00" }
-  ],
-  slotGranularity: 30,
+events: [
+{ id: "1", title: "Meeting", startTime: "2025-01-13T10:00", endTime: "2025-01-13T11:00" }
+],
+slotGranularity: 30,
 })
 
 if (result.success && result.data) {
-  console.log(\`Slot: \${result.data.startTime}\`)
+console.log(\`Slot: \${result.data.startTime}\`)
 }
 \`\`\`
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| ← / → | Previous/next week |
-| ↑ / ↓ | Select time slot (meeting-picker) |
-| t | Jump to today |
+| Key           | Action                             |
+| ------------- | ---------------------------------- |
+| ← / →         | Previous/next week                 |
+| ↑ / ↓         | Select time slot (meeting-picker)  |
+| t             | Jump to today                      |
 | space / enter | Confirm selection (meeting-picker) |
-| q / esc | Quit |
+| q / esc       | Quit                               |
 
 ## Configuration
 
 \`\`\`typescript
 interface CalendarConfig {
-  title?: string
-  events: CalendarEvent[]
-  slotGranularity?: number  // 15, 30, 60
-  businessHoursOnly?: boolean
-  initialDate?: string
+title?: string
+events: CalendarEvent[]
+slotGranularity?: number // 15, 30, 60
+businessHoursOnly?: boolean
+initialDate?: string
 }
 
 interface CalendarEvent {
-  id: string
-  title: string
-  startTime: string
-  endTime: string
-  color?: "blue" | "red" | "green" | "yellow"
-  attendees?: string[]
+id: string
+title: string
+startTime: string
+endTime: string
+color?: "blue" | "red" | "green" | "yellow"
+attendees?: string[]
 }
 \`\`\`
 
@@ -1024,12 +1046,15 @@ keywords: [markdown, editor, document, email-preview]
 ## Scenarios
 
 ### display
+
 View markdown content (read-only).
 
 ### edit
+
 Edit markdown content with live preview.
 
 ### email-preview
+
 Display email with headers and formatted content.
 
 ## API Usage
@@ -1038,32 +1063,32 @@ Display email with headers and formatted content.
 import { editDocument } from "@/api"
 
 const result = await editDocument({
-  content: "# Hello\n\nEdit this...",
-  title: "My Document",
+content: "# Hello\n\nEdit this...",
+title: "My Document",
 })
 
 if (result.success && result.data) {
-  console.log("Saved:", result.data.content)
+console.log("Saved:", result.data.content)
 }
 \`\`\`
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| ↑ / ↓ | Scroll |
+| Key    | Action           |
+| ------ | ---------------- |
+| ↑ / ↓  | Scroll           |
 | ctrl+s | Save (edit mode) |
-| q | Quit |
+| q      | Quit             |
 
 ## Configuration
 
 \`\`\`typescript
 interface DocumentConfig {
-  title?: string
-  content: string
-  language?: "markdown" | "html" | "plaintext"
-  readOnly?: boolean
-  lineNumbers?: boolean
+title?: string
+content: string
+language?: "markdown" | "html" | "plaintext"
+readOnly?: boolean
+lineNumbers?: boolean
 }
 \`\`\`
 ```
@@ -1082,6 +1107,7 @@ keywords: [flight, booking, travel, seat-selection]
 ## Scenario
 
 ### booking
+
 Compare flights and select seats.
 
 ## API Usage
@@ -1090,26 +1116,27 @@ Compare flights and select seats.
 import { spawnCanvasWithIPC } from "@/api"
 
 const result = await spawnCanvasWithIPC("flight", "booking", {
-  flights: [...],
-  maxSelectableSeats: 4,
+flights: [...],
+maxSelectableSeats: 4,
 })
 
 if (result.success && result.data) {
-  console.log("Booked:", result.data.flightId)
+console.log("Booked:", result.data.flightId)
 }
 \`\`\`
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| ↑ / ↓ | Select flight / seat |
+| Key   | Action                |
+| ----- | --------------------- |
+| ↑ / ↓ | Select flight / seat  |
 | space | Toggle seat selection |
-| enter | Confirm selection |
-| q | Quit |
+| enter | Confirm selection     |
+| q     | Quit                  |
 ```
 
 **Prevention Checklist**:
+
 - [ ] Create SKILL.md for each canvas by end of Phase 7
 - [ ] Include API usage examples
 - [ ] Document all config options
@@ -1153,18 +1180,16 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSX.Element {
   if (error()) {
     return (
       <box width="100%" height="100%" flexDirection="column" borderStyle="round">
-        <text bold color="red">Error</text>
+        <text bold color="red">
+          Error
+        </text>
         <text>{error().message}</text>
         <text dimmed>Press q to quit</text>
       </box>
     )
   }
 
-  return (
-    <box>
-      {props.children}
-    </box>
-  )
+  return <box>{props.children}</box>
 }
 ```
 
@@ -1186,12 +1211,7 @@ function renderCalendar(id: string, config?: CalendarConfig, options?: RenderOpt
 
   const { waitUntilExit } = render(() => (
     <ErrorBoundary>
-      <Calendar
-        id={id}
-        config={config}
-        socketPath={options?.socketPath}
-        scenario={options?.scenario || "display"}
-      />
+      <Calendar id={id} config={config} socketPath={options?.socketPath} scenario={options?.scenario || "display"} />
     </ErrorBoundary>
   ))
   return waitUntilExit()
@@ -1199,6 +1219,7 @@ function renderCalendar(id: string, config?: CalendarConfig, options?: RenderOpt
 ```
 
 **Prevention Checklist**:
+
 - [ ] Add ErrorBoundary component
 - [ ] Validate config schema before rendering
 - [ ] Add try-catch around render()
@@ -1215,6 +1236,7 @@ function renderCalendar(id: string, config?: CalendarConfig, options?: RenderOpt
 ## M3: OpenTUI API Assumptions Not Validated
 
 **Risk**: PHASE5_ADDON.md assumes OpenTUI API methods/props that may not exist or work as expected:
+
 - `useRenderer()`, `useKeyboard()`, `useTerminalDimensions()`
 - JSX element names (`<box>`, `<text>`, `<span>`)
 - Flex properties (`flexDirection`, `flex`, etc.)
@@ -1302,7 +1324,7 @@ export function TestCanvas(): JSX.Element {
 
   useKeyboard((key) => {
     console.log("Key:", key.name)
-    if (key.name === "up") setCount(c => c + 1)
+    if (key.name === "up") setCount((c) => c + 1)
   })
 
   return (
@@ -1321,6 +1343,7 @@ bun run src/cli.ts show test
 ```
 
 **Prevention Checklist**:
+
 - [ ] Run `bun run validate:api` before Phase 5
 - [ ] Review `/opencode/src/cli/cmd/tui/` for patterns
 - [ ] Test each OpenTUI prop in isolation
@@ -1397,15 +1420,15 @@ program
 export function log(level: "info" | "warn" | "error", msg: string, data?: unknown) {
   const timestamp = new Date().toISOString()
   const prefix = `[${timestamp}] [${level.toUpperCase()}]`
-  
+
   if (data) {
-    console.error(`${prefix} ${msg}`, data)  // Use console.error for stderr
+    console.error(`${prefix} ${msg}`, data) // Use console.error for stderr
   } else {
     console.error(`${prefix} ${msg}`)
   }
 }
 
-export const logger = { info: (m, d) => log("info", m, d), /* ... */ }
+export const logger = { info: (m, d) => log("info", m, d) /* ... */ }
 ```
 
 Use in canvas:
@@ -1437,10 +1460,13 @@ bun install
 ### CLI
 
 \`\`\`bash
+
 # Show calendar in current terminal
+
 bun run src/cli.ts show calendar
 
 # Spawn in tmux split
+
 bun run src/cli.ts spawn document --config '{...}'
 \`\`\`
 
@@ -1449,9 +1475,9 @@ bun run src/cli.ts spawn document --config '{...}'
 \`\`\`typescript
 import { pickMeetingTime } from "./src/api"
 
-const result = await pickMeetingTime({ /* ... */ })
+const result = await pickMeetingTime({ /_ ... _/ })
 if (result.success) {
-  console.log("Selected:", result.data)
+console.log("Selected:", result.data)
 }
 \`\`\`
 
@@ -1471,29 +1497,34 @@ bun test
 Use this checklist throughout implementation:
 
 ## Phase 1: Setup
+
 - [ ] `.prettierrc` added and formatted
 - [ ] Version pinning verified
 - [ ] Directory structure created
 - [ ] `bun install` succeeds
 
 ## Phase 2: IPC
+
 - [ ] ≥6 server tests pass
 - [ ] ≥3 client tests pass
 - [ ] Signal handlers added
 - [ ] Socket cleanup verified
 
 ## Phase 3: Terminal
+
 - [ ] Pane validation implemented
 - [ ] Lockfile mechanism added
 - [ ] ≥3 terminal tests pass
 - [ ] Concurrent spawn tested
 
 ## Phase 4: CLI
+
 - [ ] Config validation in place
 - [ ] Error handling for invalid kind
 - [ ] Help text complete
 
 ## Phase 5: Canvases
+
 - [ ] OpenTUI API validated (validate:api passes)
 - [ ] Test component renders
 - [ ] Calendar ≥4 tests
@@ -1502,17 +1533,20 @@ Use this checklist throughout implementation:
 - [ ] ErrorBoundary wraps all canvases
 
 ## Phase 6: API
+
 - [ ] High-level API functions exported
 - [ ] Timeout handling works
 - [ ] Message flow tested
 
 ## Phase 7: Skills
+
 - [ ] Canvas SKILL.md complete
 - [ ] Calendar SKILL.md complete
 - [ ] Document SKILL.md complete
 - [ ] Flight SKILL.md complete
 
 ## Phase 8: Polish
+
 - [ ] All tests pass (`bun test`)
 - [ ] `bun run format:check` passes
 - [ ] `bun run typecheck` passes
@@ -1524,22 +1558,22 @@ Use this checklist throughout implementation:
 
 # Summary
 
-| Risk | Severity | Mitigation | Hours |
-|------|----------|-----------|-------|
-| Pane reuse race condition | CRITICAL | Validation + locking + fallback | 2-3 |
-| Socket cleanup on exit | CRITICAL | Signal handlers + aggressive cleanup | 2-3 |
-| Prettier not enforced | CRITICAL | Add .prettierrc + npm script | 0.5 |
-| IPC tests insufficient | HIGH | Add ≥9 tests | 4-5 |
-| Terminal tests missing | HIGH | Add ≥3 tests | 3-4 |
-| Version pinning | HIGH | Pin all deps, document choices | 1 |
-| Async initialization | HIGH | Initialization barrier + queue | 2-3 |
-| Skills docs incomplete | MEDIUM | Create templates for 3 skills | 3-4 |
-| No error recovery | MEDIUM | ErrorBoundary + config validation | 2-3 |
-| OpenTUI API assumptions | MEDIUM | Validate API early, test component | 4-5 |
-| CLI error handling | LOW | Add validation & error messages | 1 |
-| No logging | LOW | Simple logger utility | 0.5 |
-| No README | LOW | Comprehensive examples | 1.5 |
-| **Total** | — | **~38 hours** | — |
+| Risk                      | Severity | Mitigation                           | Hours |
+| ------------------------- | -------- | ------------------------------------ | ----- |
+| Pane reuse race condition | CRITICAL | Validation + locking + fallback      | 2-3   |
+| Socket cleanup on exit    | CRITICAL | Signal handlers + aggressive cleanup | 2-3   |
+| Prettier not enforced     | CRITICAL | Add .prettierrc + npm script         | 0.5   |
+| IPC tests insufficient    | HIGH     | Add ≥9 tests                         | 4-5   |
+| Terminal tests missing    | HIGH     | Add ≥3 tests                         | 3-4   |
+| Version pinning           | HIGH     | Pin all deps, document choices       | 1     |
+| Async initialization      | HIGH     | Initialization barrier + queue       | 2-3   |
+| Skills docs incomplete    | MEDIUM   | Create templates for 3 skills        | 3-4   |
+| No error recovery         | MEDIUM   | ErrorBoundary + config validation    | 2-3   |
+| OpenTUI API assumptions   | MEDIUM   | Validate API early, test component   | 4-5   |
+| CLI error handling        | LOW      | Add validation & error messages      | 1     |
+| No logging                | LOW      | Simple logger utility                | 0.5   |
+| No README                 | LOW      | Comprehensive examples               | 1.5   |
+| **Total**                 | —        | **~38 hours**                        | —     |
 
 **Total project estimate**: 64-80 hours (IMPLEMENTATION_PLAN.md) + 38 hours (mitigations) = **102-118 hours**
 

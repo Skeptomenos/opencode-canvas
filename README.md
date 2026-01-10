@@ -99,12 +99,14 @@ skills/              # OpenCode skill definitions
 Canvases communicate via Unix sockets at `/tmp/canvas-{id}.sock`
 
 **Canvas → Controller:**
+
 - `ready` - Canvas initialized
 - `selected` - User made a selection
 - `cancelled` - User cancelled
 - `error` - Error occurred
 
 **Controller → Canvas:**
+
 - `update` - Update canvas configuration
 - `close` - Close the canvas
 - `ping` / `pong` - Health check

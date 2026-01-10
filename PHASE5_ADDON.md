@@ -3,6 +3,7 @@
 **Scope**: Detailed component architecture, porting strategy, and concrete templates for calendar, document, and flight canvases.
 
 **Purpose**: Close gaps in IMPLEMENTATION_PLAN.md Phase 5 by providing:
+
 1. Component hierarchy and props interfaces
 2. Concrete porting patterns (React/Ink → SolidJS/OpenTUI)
 3. State management patterns
@@ -23,6 +24,7 @@ Calendar/Document/Flight
 ```
 
 Each canvas has:
+
 - **Config props**: Passed from CLI/API (calendar events, document content, flight data)
 - **Scenario**: Controls behavior (display, edit, meeting-picker)
 - **IPC integration**: useIPCServer hook for controller communication
@@ -51,9 +53,9 @@ interface CalendarProps {
 }
 
 interface ViewState {
-  currentDate: Date  // Monday of displayed week
-  selectedSlot: number | null  // For meeting-picker
-  selectedEvent: string | null  // For hover/selection
+  currentDate: Date // Monday of displayed week
+  selectedSlot: number | null // For meeting-picker
+  selectedEvent: string | null // For hover/selection
 }
 
 export function Calendar(props: CalendarProps): JSX.Element {
@@ -72,7 +74,7 @@ export function Calendar(props: CalendarProps): JSX.Element {
     onUpdate: (config) => {
       // Update calendar based on controller message
       if (config && typeof config === "object" && "currentDate" in config) {
-        setViewState(prev => ({ ...prev, currentDate: new Date(config.currentDate as string) }))
+        setViewState((prev) => ({ ...prev, currentDate: new Date(config.currentDate as string) }))
       }
     },
   })
@@ -83,28 +85,28 @@ export function Calendar(props: CalendarProps): JSX.Element {
       renderer.exit()
     }
     if (key.name === "t") {
-      setViewState(prev => ({ ...prev, currentDate: getMonday(new Date()) }))
+      setViewState((prev) => ({ ...prev, currentDate: getMonday(new Date()) }))
     }
     if (key.name === "left" || key.name === "h") {
-      setViewState(prev => ({
+      setViewState((prev) => ({
         ...prev,
         currentDate: addDays(prev.currentDate, -7),
       }))
     }
     if (key.name === "right" || key.name === "l") {
-      setViewState(prev => ({
+      setViewState((prev) => ({
         ...prev,
         currentDate: addDays(prev.currentDate, 7),
       }))
     }
     if (key.name === "down" || key.name === "j") {
-      setViewState(prev => ({
+      setViewState((prev) => ({
         ...prev,
         selectedSlot: (prev.selectedSlot ?? -1) + 1,
       }))
     }
     if (key.name === "up" || key.name === "k") {
-      setViewState(prev => ({
+      setViewState((prev) => ({
         ...prev,
         selectedSlot: Math.max(-1, (prev.selectedSlot ?? 0) - 1),
       }))
@@ -125,10 +127,7 @@ export function Calendar(props: CalendarProps): JSX.Element {
 
   return (
     <box width="100%" height="100%" flexDirection="column">
-      <CalendarHeader
-        currentDate={viewState().currentDate}
-        config={props.config}
-      />
+      <CalendarHeader currentDate={viewState().currentDate} config={props.config} />
       <box flex={1} flexDirection="column" overflow="hidden">
         <DayHeadersRow />
         <For each={getDaysInWeek(viewState().currentDate)}>
@@ -195,7 +194,7 @@ function DayColumn(props: DayColumnProps): JSX.Element {
     <box flexDirection="column" width={colWidth} marginRight={1}>
       <For each={HOURS}>
         {(hour) => {
-          const eventsAtHour = props.events.filter(e => getHour(e.startTime) === hour)
+          const eventsAtHour = props.events.filter((e) => getHour(e.startTime) === hour)
           const isCurrentHour = isSameDay(props.date, new Date()) && hour === getHour(new Date())
 
           return (
@@ -212,9 +211,10 @@ function DayColumn(props: DayColumnProps): JSX.Element {
 }
 
 function CalendarFooter(props: { scenario: string }): JSX.Element {
-  const hints = props.scenario === "meeting-picker"
-    ? "↑/↓ select • space/enter confirm • ← /→ week • t today • q quit"
-    : "← /→ week • t today • q quit"
+  const hints =
+    props.scenario === "meeting-picker"
+      ? "↑/↓ select • space/enter confirm • ← /→ week • t today • q quit"
+      : "← /→ week • t today • q quit"
 
   return (
     <box width="100%" paddingX={1} paddingY={0} borderTop>
@@ -242,13 +242,11 @@ function getDaysInWeek(monday: Date): Date[] {
 }
 
 function filterEventsForDate(events: CalendarEvent[], date: Date): CalendarEvent[] {
-  return events.filter(e => isSameDay(new Date(e.startTime), date))
+  return events.filter((e) => isSameDay(new Date(e.startTime), date))
 }
 
 function isSameDay(d1: Date, d2: Date): boolean {
-  return d1.getFullYear() === d2.getFullYear() &&
-         d1.getMonth() === d2.getMonth() &&
-         d1.getDate() === d2.getDate()
+  return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
 }
 
 function getHour(date: Date | string): number {
@@ -276,16 +274,16 @@ function getSlotTime(slotIndex: number): string {
 export interface CalendarConfig {
   title?: string
   events: CalendarEvent[]
-  slotGranularity?: number  // minutes (30, 60)
+  slotGranularity?: number // minutes (30, 60)
   businessHoursOnly?: boolean
-  initialDate?: string  // ISO string
+  initialDate?: string // ISO string
 }
 
 export interface CalendarEvent {
   id: string
   title: string
-  startTime: string  // ISO string
-  endTime: string    // ISO string
+  startTime: string // ISO string
+  endTime: string // ISO string
   color?: "blue" | "red" | "green" | "yellow"
   attendees?: string[]
   description?: string
@@ -293,7 +291,7 @@ export interface CalendarEvent {
 
 export interface MeetingPickerConfig extends CalendarConfig {
   availableSlots: TimeSlot[]
-  minDuration?: number  // minutes
+  minDuration?: number // minutes
 }
 
 export interface TimeSlot {
@@ -489,7 +487,7 @@ export function Document(props: DocumentProps): JSX.Element {
     onClose: () => renderer.exit(),
     onUpdate: (config) => {
       if (config && typeof config === "object" && "content" in config) {
-        setViewState(prev => ({
+        setViewState((prev) => ({
           ...prev,
           content: config.content as string,
           isDirty: false,
@@ -528,16 +526,16 @@ export function Document(props: DocumentProps): JSX.Element {
       // Save / confirm
       const state = viewState()
       ipc.sendSelected({ content: state.content, cursorPosition: state.cursorPosition })
-      setViewState(prev => ({ ...prev, isDirty: false }))
+      setViewState((prev) => ({ ...prev, isDirty: false }))
     }
     if (key.name === "up" || key.name === "k") {
-      setViewState(prev => ({
+      setViewState((prev) => ({
         ...prev,
         scrollOffset: Math.max(0, prev.scrollOffset - 1),
       }))
     }
     if (key.name === "down" || key.name === "j") {
-      setViewState(prev => ({
+      setViewState((prev) => ({
         ...prev,
         scrollOffset: prev.scrollOffset + 1,
       }))
@@ -547,7 +545,7 @@ export function Document(props: DocumentProps): JSX.Element {
       const state = viewState()
       const before = state.content.slice(0, state.cursorPosition)
       const after = state.content.slice(state.cursorPosition)
-      setViewState(prev => ({
+      setViewState((prev) => ({
         ...prev,
         content: before + key.name + after,
         cursorPosition: state.cursorPosition + 1,
@@ -559,7 +557,7 @@ export function Document(props: DocumentProps): JSX.Element {
         const state = viewState()
         const before = state.content.slice(0, state.cursorPosition - 1)
         const after = state.content.slice(state.cursorPosition)
-        setViewState(prev => ({
+        setViewState((prev) => ({
           ...prev,
           content: before + after,
           cursorPosition: state.cursorPosition - 1,
@@ -600,20 +598,26 @@ function DocumentHeader(props: DocumentHeaderProps): JSX.Element {
   return (
     <box width="100%" paddingX={1} paddingY={0}>
       <text bold>{props.config?.title || "Document"}</text>
-      {props.isDirty && <text marginLeft="auto" dimmed>*</text>}
+      {props.isDirty && (
+        <text marginLeft="auto" dimmed>
+          *
+        </text>
+      )}
     </box>
   )
 }
 
 function DocumentFooter(props: { scenario: string; isDirty: boolean }): JSX.Element {
-  const hints = props.scenario === "edit"
-    ? "type to edit • ctrl+s save • q quit"
-    : "↑↓ scroll • q quit"
+  const hints = props.scenario === "edit" ? "type to edit • ctrl+s save • q quit" : "↑↓ scroll • q quit"
 
   return (
     <box width="100%" paddingX={1} paddingY={0} borderTop>
       <text dimmed>{hints}</text>
-      {props.isDirty && <text marginLeft="auto" dimmed bold>unsaved</text>}
+      {props.isDirty && (
+        <text marginLeft="auto" dimmed bold>
+          unsaved
+        </text>
+      )}
     </box>
   )
 }
@@ -644,7 +648,7 @@ export interface EmailPreviewConfig extends DocumentConfig {
 
 **File**: `src/canvases/document/components/markdown-renderer.tsx`
 
-```tsx
+````tsx
 import { createSignal, For, Show } from "solid-js"
 
 interface MarkdownRendererProps {
@@ -667,11 +671,7 @@ export function MarkdownRenderer(props: MarkdownRendererProps): JSX.Element {
 
           return (
             <box width="100%" paddingX={1}>
-              <text
-                bold={isHeading}
-                dimmed={isCodeBlock}
-                width="100%"
-              >
+              <text bold={isHeading} dimmed={isCodeBlock} width="100%">
                 {line}
               </text>
             </box>
@@ -681,7 +681,7 @@ export function MarkdownRenderer(props: MarkdownRendererProps): JSX.Element {
     </box>
   )
 }
-```
+````
 
 ### 5.2.4 Document Porting Checklist
 
@@ -693,7 +693,7 @@ export function MarkdownRenderer(props: MarkdownRendererProps): JSX.Element {
 
 - [ ] **DocumentHeader**
   - [ ] Title from config
-  - [ ] Dirty indicator (*)
+  - [ ] Dirty indicator (\*)
 
 - [ ] **MarkdownRenderer component**
   - [ ] Line-by-line rendering
@@ -753,7 +753,7 @@ export function FlightCanvas(props: FlightProps): JSX.Element {
     if (key.name === "q" || key.name === "escape") {
       const state = viewState()
       if (state.currentView === "seats") {
-        setViewState(prev => ({ ...prev, currentView: "list" }))
+        setViewState((prev) => ({ ...prev, currentView: "list" }))
       } else {
         renderer.exit()
       }
@@ -763,7 +763,7 @@ export function FlightCanvas(props: FlightProps): JSX.Element {
       if (state.currentView === "list") {
         const flights = props.config?.flights || []
         const idx = (state.selectedFlightIndex ?? 0) + 1
-        setViewState(prev => ({
+        setViewState((prev) => ({
           ...prev,
           selectedFlightIndex: Math.min(idx, flights.length - 1),
         }))
@@ -771,7 +771,7 @@ export function FlightCanvas(props: FlightProps): JSX.Element {
     }
     if (key.name === "up" || key.name === "k") {
       if (viewState().currentView === "list") {
-        setViewState(prev => ({
+        setViewState((prev) => ({
           ...prev,
           selectedFlightIndex: Math.max(0, (prev.selectedFlightIndex ?? 0) - 1),
         }))
@@ -780,7 +780,7 @@ export function FlightCanvas(props: FlightProps): JSX.Element {
     if (key.name === "return" || key.name === "space") {
       const state = viewState()
       if (state.currentView === "list" && state.selectedFlightIndex !== null) {
-        setViewState(prev => ({ ...prev, currentView: "seats" }))
+        setViewState((prev) => ({ ...prev, currentView: "seats" }))
       } else if (state.currentView === "seats") {
         // Confirm booking
         const flight = (props.config?.flights || [])[state.selectedFlightIndex!]
@@ -793,11 +793,11 @@ export function FlightCanvas(props: FlightProps): JSX.Element {
     if (viewState().currentView === "seats" && key.name && /^[a-zA-Z0-9]$/.test(key.name)) {
       // Seat selection (e.g., "A5", "C2")
       const seatId = key.name.toUpperCase()
-      setViewState(prev => ({
+      setViewState((prev) => ({
         ...prev,
         selectedSeatIndices: new Set(
           prev.selectedSeatIndices.has(seatId)
-            ? Array.from(prev.selectedSeatIndices).filter(s => s !== seatId)
+            ? Array.from(prev.selectedSeatIndices).filter((s) => s !== seatId)
             : [...Array.from(prev.selectedSeatIndices), seatId]
         ),
       }))
@@ -818,10 +818,7 @@ export function FlightCanvas(props: FlightProps): JSX.Element {
           when={viewState().currentView === "list"}
           fallback={<SeatSelectionView flight={(props.config?.flights || [])[viewState().selectedFlightIndex!]} />}
         >
-          <FlightListView
-            flights={props.config?.flights || []}
-            selectedIndex={viewState().selectedFlightIndex}
-          />
+          <FlightListView flights={props.config?.flights || []} selectedIndex={viewState().selectedFlightIndex} />
         </Show>
       </box>
       <FlightFooter view={viewState().currentView} />
@@ -846,12 +843,7 @@ function FlightListView(props: FlightListViewProps): JSX.Element {
   return (
     <box flexDirection="column" width="100%">
       <For each={props.flights}>
-        {(flight, idx) => (
-          <FlightRow
-            flight={flight}
-            isSelected={props.selectedIndex === idx()}
-          />
-        )}
+        {(flight, idx) => <FlightRow flight={flight} isSelected={props.selectedIndex === idx()} />}
       </For>
     </box>
   )
@@ -872,8 +864,12 @@ function FlightRow(props: FlightRowProps): JSX.Element {
       backgroundColor={props.isSelected ? "#333" : undefined}
     >
       <box flexDirection="column" flex={1}>
-        <text bold>{props.flight.airline} {props.flight.flightNumber}</text>
-        <text dimmed>{props.flight.departure} → {props.flight.arrival}</text>
+        <text bold>
+          {props.flight.airline} {props.flight.flightNumber}
+        </text>
+        <text dimmed>
+          {props.flight.departure} → {props.flight.arrival}
+        </text>
       </box>
       <text marginLeft="auto">{props.flight.price}</text>
     </box>
@@ -890,17 +886,17 @@ function SeatSelectionView(props: SeatSelectionViewProps): JSX.Element {
 
   return (
     <box flexDirection="column" width="100%">
-      <text paddingX={1} dimmed>{props.flight.airline} {props.flight.flightNumber}</text>
+      <text paddingX={1} dimmed>
+        {props.flight.airline} {props.flight.flightNumber}
+      </text>
       <For each={rows}>
         {(row) => (
           <box width="100%" paddingX={2}>
-            <text width={2} bold>{row}</text>
+            <text width={2} bold>
+              {row}
+            </text>
             <For each={Array.from({ length: seatsPerRow }, (_, i) => i + 1)}>
-              {(seatNum) => (
-                <text width={3}>
-                  [{seatNum}]
-                </text>
-              )}
+              {(seatNum) => <text width={3}>[{seatNum}]</text>}
             </For>
           </box>
         )}
@@ -910,9 +906,10 @@ function SeatSelectionView(props: SeatSelectionViewProps): JSX.Element {
 }
 
 function FlightFooter(props: { view: string }): JSX.Element {
-  const hints = props.view === "list"
-    ? "↑↓ select • enter view seats • q quit"
-    : "↑↓ select seat • space toggle • enter confirm • q back"
+  const hints =
+    props.view === "list"
+      ? "↑↓ select • enter view seats • q quit"
+      : "↑↓ select seat • space toggle • enter confirm • q back"
 
   return (
     <box width="100%" paddingX={1} paddingY={0} borderTop>
@@ -937,11 +934,11 @@ export interface Flight {
   id: string
   airline: string
   flightNumber: string
-  departure: string  // "LAX 2:30 PM"
-  arrival: string    // "JFK 11:00 PM"
-  duration: string   // "5h 30m"
-  price: string      // "$450"
-  date: string       // ISO date
+  departure: string // "LAX 2:30 PM"
+  arrival: string // "JFK 11:00 PM"
+  duration: string // "5h 30m"
+  price: string // "$450"
+  date: string // ISO date
   availableSeats: number
   configuration?: SeatConfiguration
 }
@@ -949,7 +946,7 @@ export interface Flight {
 export interface SeatConfiguration {
   rows: number
   seatsPerRow: number
-  layout: string  // e.g., "3-2-3"
+  layout: string // e.g., "3-2-3"
 }
 
 export interface Booking {
@@ -1005,9 +1002,7 @@ import { Calendar } from "./calendar"
 describe("Calendar", () => {
   test("renders calendar with events", () => {
     const config = {
-      events: [
-        { id: "1", title: "Meeting", startTime: "2025-01-13T10:00", endTime: "2025-01-13T11:00" },
-      ],
+      events: [{ id: "1", title: "Meeting", startTime: "2025-01-13T10:00", endTime: "2025-01-13T11:00" }],
     }
     // Note: Full render test requires @opentui/solid test utilities
     expect(config.events).toHaveLength(1)
@@ -1060,6 +1055,7 @@ describe("Document", () => {
 ### 5.4.3 Manual Testing Checklist
 
 **Calendar:**
+
 - [ ] Show default calendar (today highlighted)
 - [ ] ← /→ navigates weeks
 - [ ] t jumps to today
@@ -1069,6 +1065,7 @@ describe("Document", () => {
 - [ ] q quits cleanly
 
 **Document:**
+
 - [ ] Markdown renders with basic formatting (bold headings)
 - [ ] ↑↓ scrolls content
 - [ ] Character input works (edit mode)
@@ -1078,6 +1075,7 @@ describe("Document", () => {
 - [ ] Selection callback returns correct offsets
 
 **Flight:**
+
 - [ ] Flight list displays all flights
 - [ ] ↑↓ selects flights
 - [ ] Enter opens seat map
@@ -1173,14 +1171,14 @@ onCleanup(() => {
 
 ## Estimated Effort
 
-| Component | Lines | Hours |
-|-----------|-------|-------|
-| Calendar (canvas + types + hook) | 450 | 6 |
-| Document (canvas + types + renderer) | 350 | 5 |
-| Flight (canvas + types) | 300 | 4 |
-| Tests (all canvases) | 200 | 3 |
-| Integration & debugging | — | 4 |
-| **Total** | **~1300** | **~22** |
+| Component                            | Lines     | Hours   |
+| ------------------------------------ | --------- | ------- |
+| Calendar (canvas + types + hook)     | 450       | 6       |
+| Document (canvas + types + renderer) | 350       | 5       |
+| Flight (canvas + types)              | 300       | 4       |
+| Tests (all canvases)                 | 200       | 3       |
+| Integration & debugging              | —         | 4       |
+| **Total**                            | **~1300** | **~22** |
 
 ---
 

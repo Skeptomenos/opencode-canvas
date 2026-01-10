@@ -48,22 +48,26 @@ skills/              # OpenCode skill definitions (canvas/, calendar/, document/
 ## Code Style Guidelines
 
 ### Formatting (Prettier)
+
 ```json
 {
   "semi": false,
   "printWidth": 120
 }
 ```
+
 - No semicolons
 - 120 character line width
 
 ### Imports
+
 - Group: stdlib > external packages > internal modules
 - Use path aliases: `@/*` for `./src/*`
 - Prefer named imports over default imports
 - No barrel files unless necessary
 
 ### TypeScript
+
 - **AVOID** `any` type - use `unknown` or proper generics
 - **AVOID** `as` type assertions - prefer type guards
 - **AVOID** `@ts-ignore` / `@ts-expect-error`
@@ -71,6 +75,7 @@ skills/              # OpenCode skill definitions (canvas/, calendar/, document/
 - Prefer interfaces over type aliases for object shapes
 
 ### Variables & Naming
+
 - **PREFER** single-word variable names where possible
 - **AVOID** `let` - use `const` exclusively
 - **AVOID** unnecessary destructuring: use `obj.a` not `const { a } = obj`
@@ -79,16 +84,19 @@ skills/              # OpenCode skill definitions (canvas/, calendar/, document/
 - SCREAMING_SNAKE for constants
 
 ### Control Flow
+
 - **AVOID** `try/catch` where possible - use Result types or early returns
 - **AVOID** `else` statements - prefer early returns
 - **AVOID** nested conditionals - flatten with guard clauses
 
 ### Functions
+
 - Keep things in one function unless composable or reusable
 - Prefer arrow functions for callbacks
 - Use Bun APIs: `Bun.file()`, `Bun.write()`, `Bun.connect()`, etc.
 
 ### Error Handling
+
 - Return errors as values, don't throw
 - Use discriminated unions for Result types
 - Log errors with context before returning
@@ -96,6 +104,7 @@ skills/              # OpenCode skill definitions (canvas/, calendar/, document/
 ## SolidJS/OpenTUI Conventions
 
 ### JSX Elements (lowercase tags)
+
 ```tsx
 // Correct - OpenTUI uses lowercase intrinsic elements
 <box flexDirection="column">
@@ -110,28 +119,29 @@ skills/              # OpenCode skill definitions (canvas/, calendar/, document/
 ```
 
 ### State & Input
+
 ```tsx
 // State: SolidJS signals (NOT React hooks)
 const [count, setCount] = createSignal(0)
 
 // Keyboard: OpenTUI (NOT Ink)
 useKeyboard((key) => {
-  if (key.name === "down") setSelected(s => s + 1)
+  if (key.name === "down") setSelected((s) => s + 1)
 })
 ```
 
 ## Component Mapping (React/Ink -> OpenTUI/Solid)
 
-| React/Ink | OpenTUI/Solid |
-|-----------|---------------|
-| `<Box>` | `<box>` |
-| `<Text>` | `<text>` / `<span>` |
-| `useInput()` | `useKeyboard()` |
-| `useApp()` | `useRenderer()` |
-| `useStdout()` | `useTerminalDimensions()` |
-| `render()` | `render()` from @opentui/solid |
-| `useState` | `createSignal` |
-| `useEffect` | `createEffect` |
+| React/Ink     | OpenTUI/Solid                  |
+| ------------- | ------------------------------ |
+| `<Box>`       | `<box>`                        |
+| `<Text>`      | `<text>` / `<span>`            |
+| `useInput()`  | `useKeyboard()`                |
+| `useApp()`    | `useRenderer()`                |
+| `useStdout()` | `useTerminalDimensions()`      |
+| `render()`    | `render()` from @opentui/solid |
+| `useState`    | `createSignal`                 |
+| `useEffect`   | `createEffect`                 |
 
 ## IPC Protocol
 

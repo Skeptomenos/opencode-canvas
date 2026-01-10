@@ -19,12 +19,7 @@ function showCursor(): void {
   process.stdout.write("\x1b[?25h")
 }
 
-export async function renderCanvas(
-  kind: string,
-  id: string,
-  config?: unknown,
-  options?: RenderOptions
-): Promise<void> {
+export async function renderCanvas(kind: string, id: string, config?: unknown, options?: RenderOptions): Promise<void> {
   clearScreen()
   process.on("exit", showCursor)
   process.on("SIGINT", () => {

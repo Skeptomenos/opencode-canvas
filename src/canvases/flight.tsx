@@ -88,7 +88,13 @@ export function FlightCanvas(props: FlightProps) {
 
   return (
     <box flexDirection="column" width={dimensions().width} height={dimensions().height}>
-      <box flexDirection="row" justifyContent="space-between" paddingLeft={1} paddingRight={1} backgroundColor="#222222">
+      <box
+        flexDirection="row"
+        justifyContent="space-between"
+        paddingLeft={1}
+        paddingRight={1}
+        backgroundColor="#222222"
+      >
         <text attributes={TextAttributes.BOLD} fg="#00ffff">
           Flights: {origin} → {destination}
         </text>
@@ -96,13 +102,27 @@ export function FlightCanvas(props: FlightProps) {
       </box>
 
       <box flexDirection="row" paddingLeft={1} paddingRight={1} marginTop={1} backgroundColor="#1a1a1a">
-        <box width={12}><text fg="#808080">Airline</text></box>
-        <box width={10}><text fg="#808080">Flight</text></box>
-        <box width={8}><text fg="#808080">Depart</text></box>
-        <box width={8}><text fg="#808080">Arrive</text></box>
-        <box width={8}><text fg="#808080">Duration</text></box>
-        <box width={10}><text fg="#808080">Stops</text></box>
-        <box width={10}><text fg="#808080">Price</text></box>
+        <box width={12}>
+          <text fg="#808080">Airline</text>
+        </box>
+        <box width={10}>
+          <text fg="#808080">Flight</text>
+        </box>
+        <box width={8}>
+          <text fg="#808080">Depart</text>
+        </box>
+        <box width={8}>
+          <text fg="#808080">Arrive</text>
+        </box>
+        <box width={8}>
+          <text fg="#808080">Duration</text>
+        </box>
+        <box width={10}>
+          <text fg="#808080">Stops</text>
+        </box>
+        <box width={10}>
+          <text fg="#808080">Price</text>
+        </box>
       </box>
 
       <scrollbox height={dimensions().height - 5} flexGrow={1}>
@@ -134,9 +154,7 @@ export function FlightCanvas(props: FlightProps) {
                   <text fg="#808080">{flight.duration}</text>
                 </box>
                 <box width={10}>
-                  <text fg={flight.stops === 0 ? "#00ff00" : "#ffaa00"}>
-                    {formatStops(flight.stops)}
-                  </text>
+                  <text fg={flight.stops === 0 ? "#00ff00" : "#ffaa00"}>{formatStops(flight.stops)}</text>
                 </box>
                 <box width={10}>
                   <text attributes={TextAttributes.BOLD} fg="#00ffff">
@@ -156,9 +174,7 @@ export function FlightCanvas(props: FlightProps) {
       </scrollbox>
 
       <box paddingLeft={1} paddingRight={1} backgroundColor="#222222">
-        <text fg="#808080">
-          [↑/↓] Select [Enter] Book [q] Quit
-        </text>
+        <text fg="#808080">[↑/↓] Select [Enter] Book [q] Quit</text>
       </box>
     </box>
   )

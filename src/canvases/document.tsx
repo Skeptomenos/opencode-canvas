@@ -164,7 +164,13 @@ export function Document(props: DocumentProps) {
 
   return (
     <box flexDirection="column" width={dimensions().width} height={dimensions().height}>
-      <box flexDirection="row" justifyContent="space-between" paddingLeft={1} paddingRight={1} backgroundColor="#222222">
+      <box
+        flexDirection="row"
+        justifyContent="space-between"
+        paddingLeft={1}
+        paddingRight={1}
+        backgroundColor="#222222"
+      >
         <text attributes={TextAttributes.BOLD} fg="#00ffff">
           {title}
         </text>
@@ -175,15 +181,9 @@ export function Document(props: DocumentProps) {
 
       {config.emailHeaders && (
         <box flexDirection="column" paddingLeft={1} paddingRight={1} backgroundColor="#1a1a1a">
-          {config.emailHeaders.from && (
-            <text fg="#808080">From: {config.emailHeaders.from}</text>
-          )}
-          {config.emailHeaders.to && (
-            <text fg="#808080">To: {config.emailHeaders.to}</text>
-          )}
-          {config.emailHeaders.subject && (
-            <text fg="#aaaaaa">Subject: {config.emailHeaders.subject}</text>
-          )}
+          {config.emailHeaders.from && <text fg="#808080">From: {config.emailHeaders.from}</text>}
+          {config.emailHeaders.to && <text fg="#808080">To: {config.emailHeaders.to}</text>}
+          {config.emailHeaders.subject && <text fg="#aaaaaa">Subject: {config.emailHeaders.subject}</text>}
         </box>
       )}
 
@@ -202,10 +202,7 @@ export function Document(props: DocumentProps) {
                 <box width={5} paddingRight={1}>
                   <text fg="#555555">{(actualLineIndex + 1).toString().padStart(4)}</text>
                 </box>
-                <text
-                  attributes={isCursor ? TextAttributes.BOLD : 0}
-                  fg={getLineColor(line)}
-                >
+                <text attributes={isCursor ? TextAttributes.BOLD : 0} fg={getLineColor(line)}>
                   {formatLine(line, actualLineIndex) || " "}
                 </text>
               </box>
@@ -215,9 +212,7 @@ export function Document(props: DocumentProps) {
       </scrollbox>
 
       <box paddingLeft={1} paddingRight={1} backgroundColor="#222222">
-        <text fg="#808080">
-          [↑/↓] Navigate [PgUp/PgDn] Page [Shift+↑/↓] Select [Enter] Confirm [q] Quit
-        </text>
+        <text fg="#808080">[↑/↓] Navigate [PgUp/PgDn] Page [Shift+↑/↓] Select [Enter] Confirm [q] Quit</text>
       </box>
     </box>
   )

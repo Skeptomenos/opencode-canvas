@@ -6,10 +6,7 @@ function setWindowTitle(title: string): void {
   process.stdout.write(`\x1b]0;${title}\x07`)
 }
 
-program
-  .name("opencode-canvas")
-  .description("Interactive terminal canvases for OpenCode")
-  .version("0.1.0")
+program.name("opencode-canvas").description("Interactive terminal canvases for OpenCode").version("0.1.0")
 
 program
   .command("show [kind]")
