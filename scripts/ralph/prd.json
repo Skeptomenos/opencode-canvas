@@ -1,0 +1,233 @@
+{
+  "project": "opencode-canvas",
+  "branchName": "ralph/vim-editor",
+  "description": "Vim-style text editing for the document canvas",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create editor state management",
+      "description": "As a developer, I need a state management system for the editor so that all editing operations have a consistent foundation.",
+      "acceptanceCriteria": [
+        "Create src/canvases/editor/editor-state.ts with EditorState interface",
+        "State includes: mode, lines, cursorLine, cursorCol, isDirty, filePath, isReadOnly",
+        "Create createEditorState() function that initializes state from file content",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Foundation for all other stories. Keep it simple - just the state shape and initialization."
+    },
+    {
+      "id": "US-002",
+      "title": "Add normal mode navigation",
+      "description": "As a vim user, I want to navigate with h/j/k/l so that I can move around the file efficiently.",
+      "acceptanceCriteria": [
+        "h moves cursor left (stops at column 0)",
+        "l moves cursor right (stops at end of line)",
+        "j moves cursor down (stops at last line)",
+        "k moves cursor up (stops at first line)",
+        "0 moves to start of line",
+        "$ moves to end of line",
+        "gg moves to first line",
+        "G moves to last line",
+        "Cursor position updates in state",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Navigation only - no editing yet. Test with existing document.tsx."
+    },
+    {
+      "id": "US-003",
+      "title": "Add insert mode with basic typing",
+      "description": "As a user, I want to enter insert mode and type text so that I can edit the file.",
+      "acceptanceCriteria": [
+        "i enters insert mode at cursor position",
+        "a enters insert mode after cursor position",
+        "Escape returns to normal mode",
+        "Printable characters insert at cursor position",
+        "Backspace deletes character before cursor",
+        "Enter inserts new line",
+        "Mode indicator shows '-- INSERT --' in insert mode",
+        "Mode indicator shows '-- NORMAL --' in normal mode",
+        "isDirty flag set to true when content changes",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Core editing capability. Keep insert mode simple - just i, a, Escape."
+    },
+    {
+      "id": "US-004",
+      "title": "Add save with confirmation and backup",
+      "description": "As a user, I want to save my changes with confirmation so that I don't accidentally overwrite files.",
+      "acceptanceCriteria": [
+        ":w command triggers save flow",
+        "Ctrl+S triggers save flow (works in both modes)",
+        "Save shows confirmation prompt: 'Save changes to {filename}? [y/n]'",
+        "y confirms save, n cancels",
+        "Before saving, create backup file: {filename}.bak",
+        "After save, show 'Saved' message for 2 seconds",
+        "After save, isDirty set to false",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Critical for data safety. Backup must happen BEFORE overwriting original."
+    },
+    {
+      "id": "US-005",
+      "title": "Add quit with unsaved changes warning",
+      "description": "As a user, I want to be warned about unsaved changes when quitting so that I don't lose work.",
+      "acceptanceCriteria": [
+        ":q command quits if no unsaved changes",
+        ":q with unsaved changes shows prompt: 'Unsaved changes. Save before quitting? [y/n/c]'",
+        "y saves and quits, n quits without saving, c cancels (stays in editor)",
+        ":wq saves and quits",
+        ":q! quits without saving (no prompt)",
+        "Title bar shows * when file has unsaved changes",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Prevents accidental data loss. The * indicator is important visual feedback."
+    },
+    {
+      "id": "US-006",
+      "title": "Add undo and redo",
+      "description": "As a user, I want to undo and redo changes so that I can fix mistakes.",
+      "acceptanceCriteria": [
+        "Create src/canvases/editor/editor-undo.ts",
+        "u in normal mode undoes last change",
+        "Ctrl+R in normal mode redoes last undone change",
+        "Undo stack stores up to 100 operations",
+        "Each operation is atomic (single insert, delete, etc.)",
+        "Undo stack cleared on save",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Essential for editing confidence. Keep operations atomic for predictable undo."
+    },
+    {
+      "id": "US-007",
+      "title": "Add line operations (dd, yy, p)",
+      "description": "As a vim user, I want to delete, yank, and paste lines so that I can edit efficiently.",
+      "acceptanceCriteria": [
+        "Create src/canvases/editor/editor-clipboard.ts",
+        "dd deletes current line and copies to clipboard",
+        "yy copies current line to clipboard",
+        "p pastes clipboard content after current line",
+        "P pastes clipboard content before current line",
+        "Clipboard persists during session",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Line operations are the most common vim editing pattern."
+    },
+    {
+      "id": "US-008",
+      "title": "Add more insert mode commands (o, O, A, I)",
+      "description": "As a vim user, I want more ways to enter insert mode so that I can edit more efficiently.",
+      "acceptanceCriteria": [
+        "o opens new line below and enters insert mode",
+        "O opens new line above and enters insert mode",
+        "A moves to end of line and enters insert mode",
+        "I moves to start of line and enters insert mode",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Quality of life improvements for vim users."
+    },
+    {
+      "id": "US-009",
+      "title": "Add word navigation (w, b)",
+      "description": "As a vim user, I want to navigate by word so that I can move faster.",
+      "acceptanceCriteria": [
+        "w moves cursor to start of next word",
+        "b moves cursor to start of previous word",
+        "Words are separated by whitespace or punctuation",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Common vim navigation. Keep word definition simple."
+    },
+    {
+      "id": "US-010",
+      "title": "Add x command (delete character)",
+      "description": "As a vim user, I want to delete the character under the cursor with x.",
+      "acceptanceCriteria": [
+        "x in normal mode deletes character under cursor",
+        "Cursor stays in place (or moves left if at end of line)",
+        "Works with undo",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Simple single-character delete."
+    },
+    {
+      "id": "US-011",
+      "title": "Add read-only restrictions",
+      "description": "As a user, I want certain files to be read-only so that I don't accidentally modify them.",
+      "acceptanceCriteria": [
+        "Files in node_modules/ are read-only",
+        "Files in .git/ are read-only",
+        "Binary files are read-only (detected by null bytes in first 8KB)",
+        "Files larger than 1MB are read-only",
+        "Read-only files show 'Read-only' indicator in status bar",
+        "Attempting to edit read-only file shows message explaining why",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Safety feature. Check restrictions when opening file, not on every keystroke."
+    },
+    {
+      "id": "US-012",
+      "title": "Integrate editor with document.tsx",
+      "description": "As a user, I want to edit files from the document viewer so that I have a seamless experience.",
+      "acceptanceCriteria": [
+        "document.tsx accepts editable prop",
+        "When editable=true, editor component is used instead of read-only viewer",
+        "file-viewer.tsx passes editable=true for editable files",
+        "tree-file-viewer.tsx passes editable=true for editable files",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "Integration story. Editor should replace viewer when editing is enabled."
+    },
+    {
+      "id": "US-013",
+      "title": "Add --edit flag to CLI",
+      "description": "As a user, I want to open files directly in edit mode from the command line.",
+      "acceptanceCriteria": [
+        "bun run src/cli.ts show document --file README.md --edit opens in edit mode",
+        "Without --edit flag, opens in view mode (current behavior)",
+        "Typecheck passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "CLI convenience. Simple flag addition."
+    },
+    {
+      "id": "US-014",
+      "title": "Add status bar with cursor position",
+      "description": "As a user, I want to see my cursor position so that I know where I am in the file.",
+      "acceptanceCriteria": [
+        "Status bar shows: mode, filename, modified indicator (*), line:col",
+        "Format: '-- MODE -- filename.txt * Line 5/120 Col 12'",
+        "Status bar color: normal=gray, insert=green",
+        "Updates in real-time as cursor moves",
+        "Typecheck passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "Polish story. Important for user orientation."
+    }
+  ]
+}

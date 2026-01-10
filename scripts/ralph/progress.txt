@@ -1,0 +1,33 @@
+# Ralph Progress Log
+Started: Sat Jan 10 09:45:40 CET 2026
+---
+
+## Codebase Patterns
+- Editor files go in `src/canvases/editor/` directory
+- Use `const` exclusively, avoid `let`
+- No semicolons (Prettier config)
+- 120 character line width
+- Use `??` for nullish coalescing defaults
+
+---
+
+## Sat Jan 10 2026 - US-001
+- What was implemented: EditorState interface and createEditorState() function
+- Files changed: src/canvases/editor/editor-state.ts (new file)
+- **Learnings for future iterations:**
+  - EditorState includes: mode, lines, cursorLine, cursorCol, isDirty, filePath, isReadOnly
+  - EditorMode is "normal" | "insert"
+  - Helper functions: getEditorContent(), getCurrentLine(), clampCursorCol()
+  - Empty files should have one empty line (lines.length >= 1)
+  - Cursor bounds differ by mode: insert allows cursor at line.length, normal stops at line.length - 1
+---
+
+## Sat Jan 10 2026 - US-002
+- What was implemented: Normal mode navigation functions (h/j/k/l, 0, $, gg, G)
+- Files changed: src/canvases/editor/editor-navigation.ts (new file)
+- **Learnings for future iterations:**
+  - Navigation functions are pure: (EditorState) => EditorState
+  - moveDown/moveUp clamp cursor column to new line length
+  - Use Math.max(0, line.length - 1) for normal mode cursor bounds
+  - moveToFirstLine and moveToLastLine reset cursor column to 0
+---
