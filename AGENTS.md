@@ -1,7 +1,7 @@
 # OpenCode Canvas - Agent Knowledge Base
 
 **Project**: Claude-canvas clone for OpenCode
-**Status**: Greenfield - not yet implemented
+**Status**: Implemented (Phases 1-7 complete)
 **Stack**: Bun + SolidJS + @opentui/solid + @opentui/core
 
 ## Overview
@@ -16,24 +16,27 @@ bun install
 
 # Development
 bun run src/cli.ts show calendar          # Show canvas in current terminal
-bun run src/cli.ts spawn document         # Spawn canvas in tmux split
-bun run src/cli.ts update <id> --config '{...}'
+bun run src/cli.ts spawn calendar         # Spawn canvas in tmux split
+bun run src/cli.ts env                    # Check terminal environment
 
 # Type checking
 bun run typecheck                          # Full typecheck
-bunx tsc --noEmit                          # Alternative
 
 # Testing
-bun test                                   # Run all tests
+bun test                                   # Run all tests (6 tests)
 bun test src/ipc/server.test.ts            # Run single test file
 bun test --watch                           # Watch mode
-bun test --coverage                        # With coverage
+
+# Formatting
+bun run format                             # Format all files
+bun run format:check                       # Check formatting
+bun run lint                               # Format check + typecheck
 
 # Building
 bun run build                              # Production build
 ```
 
-## Target Structure
+## Project Structure
 
 ```
 src/

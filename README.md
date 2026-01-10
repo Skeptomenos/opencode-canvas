@@ -77,9 +77,91 @@ bun run typecheck
 # Run tests
 bun test
 
+# Formatting
+bun run format          # Format all files
+bun run format:check    # Check formatting
+bun run lint            # Format check + typecheck
+
 # Build for production
 bun run build
 ```
+
+## Programmatic API
+
+```typescript
+import { pickMeetingTime, editDocument, bookFlight } from "./src/api"
+
+// Pick a meeting time slot
+const meetingResult = await pickMeetingTime({
+  events: [{ id: "1", title: "Standup", start: "2025-01-10T09:00", end: "2025-01-10T09:30" }],
+  slotGranularity: 30,
+})
+
+if (meetingResult.success && meetingResult.data) {
+  console.log(`Selected: ${meetingResult.data.startTime}`)
+}
+
+// Edit a document
+const docResult = await editDocument({
+  content: "# My Document\n\nEdit this...",
+  title: "Notes",
+})
+
+// Book a flight
+const flightResult = await bookFlight({
+  origin: "SFO",
+  destination: "JFK",
+  flights: [
+    {
+      id: "1",
+      airline: "United",
+      flightNumber: "UA123",
+      departure: "08:00",
+      arrival: "16:30",
+      duration: "5h30m",
+      price: 450,
+      stops: 0,
+    },
+  ],
+})
+```
+
+## Skills
+
+OpenCode skill definitions are in `skills/`:
+
+- `skills/canvas/SKILL.md` - General canvas system overview
+- `skills/calendar/SKILL.md` - Calendar canvas usage
+- `skills/document/SKILL.md` - Document canvas usage
+- `skills/flight/SKILL.md` - Flight canvas usage
+
+## Keyboard Shortcuts
+
+### Calendar
+
+| Key     | Action             |
+| ------- | ------------------ |
+| `←`/`→` | Previous/next week |
+| `↑`/`↓` | Select time slot   |
+| `t`     | Jump to today      |
+| `Enter` | Confirm selection  |
+| `q`     | Quit               |
+
+### Document
+
+| Key      | Action           |
+| -------- | ---------------- |
+| `↑`/`↓`  | Scroll           |
+| `Ctrl+S` | Save (edit mode) |
+| `q`      | Quit             |
+
+### Flight
+
+| Key     | Action        |
+| ------- | ------------- |
+| `↑`/`↓` | Select flight |
+| `Enter` | Book selected |
+| `q`     | Quit          |
 
 ## Architecture
 
