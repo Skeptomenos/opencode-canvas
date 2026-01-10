@@ -1,6 +1,10 @@
-import { render, useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
-import { TextAttributes } from "@opentui/core"
-import { createSignal } from "solid-js"
+import { render } from "@opentui/solid"
+import { Calendar } from "./calendar"
+import { Document } from "./document"
+import { FlightCanvas } from "./flight"
+import type { CalendarConfig } from "./calendar/types"
+import type { DocumentConfig } from "./document/types"
+import type { FlightConfig } from "./flight"
 
 export interface RenderOptions {
   socketPath?: string
@@ -30,52 +34,63 @@ export async function renderCanvas(
 
   switch (kind) {
     case "calendar":
-      return renderPlaceholder("Calendar", id, options)
+      return renderCalendar(id, config as CalendarConfig, options)
     case "document":
-      return renderPlaceholder("Document", id, options)
+      return renderDocument(id, config as DocumentConfig, options)
     case "flight":
-      return renderPlaceholder("Flight", id, options)
+      return renderFlight(id, config as FlightConfig, options)
     default:
       console.error(`Unknown canvas: ${kind}`)
       process.exit(1)
   }
 }
 
-function PlaceholderCanvas(props: { name: string; id: string; scenario?: string; onExit: () => void }) {
-  const renderer = useRenderer()
-  const dimensions = useTerminalDimensions()
-  const [counter, setCounter] = createSignal(0)
-
-  useKeyboard((key) => {
-    if (key.name === "q" || key.name === "escape") {
-      renderer.destroy()
-      props.onExit()
-    }
-    if (key.name === "up") setCounter((c) => c + 1)
-    if (key.name === "down") setCounter((c) => Math.max(0, c - 1))
-  })
-
-  return (
-    <box flexDirection="column" padding={1} width={dimensions().width} height={dimensions().height}>
-      <text attributes={TextAttributes.BOLD} fg="#00ffff">
-        {props.name} Canvas
-      </text>
-      <text fg="#808080">ID: {props.id}</text>
-      <text fg="#808080">Scenario: {props.scenario || "display"}</text>
-      <box marginTop={1}>
-        <text>Counter: {counter()}</text>
-      </box>
-      <box marginTop={1}>
-        <text fg="#808080">[↑/↓] Change counter [q] Quit</text>
-      </box>
-    </box>
-  )
-}
-
-async function renderPlaceholder(name: string, id: string, options?: RenderOptions): Promise<void> {
+async function renderCalendar(id: string, config?: CalendarConfig, options?: RenderOptions): Promise<void> {
   return new Promise<void>((resolve) => {
     render(
-      () => <PlaceholderCanvas name={name} id={id} scenario={options?.scenario} onExit={resolve} />,
+      () => (
+        <Calendar
+          id={id}
+          config={config}
+          socketPath={options?.socketPath}
+          scenario={options?.scenario || "display"}
+          onExit={resolve}
+        />
+      ),
+      { exitOnCtrlC: false }
+    )
+  })
+}
+
+async function renderDocument(id: string, config?: DocumentConfig, options?: RenderOptions): Promise<void> {
+  return new Promise<void>((resolve) => {
+    render(
+      () => (
+        <Document
+          id={id}
+          config={config}
+          socketPath={options?.socketPath}
+          scenario={options?.scenario || "display"}
+          onExit={resolve}
+        />
+      ),
+      { exitOnCtrlC: false }
+    )
+  })
+}
+
+async function renderFlight(id: string, config?: FlightConfig, options?: RenderOptions): Promise<void> {
+  return new Promise<void>((resolve) => {
+    render(
+      () => (
+        <FlightCanvas
+          id={id}
+          config={config}
+          socketPath={options?.socketPath}
+          scenario={options?.scenario || "booking"}
+          onExit={resolve}
+        />
+      ),
       { exitOnCtrlC: false }
     )
   })
