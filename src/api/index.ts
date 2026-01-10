@@ -1,0 +1,15 @@
+export {
+  spawnCanvasWithIPC,
+  pickMeetingTime,
+  editDocument,
+  viewDocument,
+  bookFlight,
+  connectToCanvas,
+  type CanvasResult,
+  type SpawnOptions,
+  type MeetingPickerConfig,
+  type MeetingPickerResult,
+  type EditDocumentConfig,
+  type ViewDocumentConfig,
+  type BookFlightConfig,
+} from "./canvas-api"
