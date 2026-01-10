@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "bun run src/cli.ts",
-    "typecheck": "bunx tsc --noEmit",
+    "typecheck": "bun x tsc --noEmit",
     "test": "bun test",
     "build": "bun build src/cli.ts --outdir dist --target bun"
   },
