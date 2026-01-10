@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js"
+import { createSignal, Switch, Match } from "solid-js"
 import { render } from "@opentui/solid"
 import { TreeBrowser } from "./tree-browser"
 import { Document } from "./document"
@@ -80,7 +80,7 @@ async function loadFileContent(path: string): Promise<DocumentConfig> {
 }
 
 export function TreeFileViewer(props: TreeFileViewerProps) {
-  const [mode, setMode] = createSignal<"browse" | "view">("browse")
+  const [mode, setMode] = createSignal<"browse" | "view" | "edit">("browse")
   const [docConfig, setDocConfig] = createSignal<DocumentConfig | null>(null)
   const [viewingPath, setViewingPath] = createSignal<string | null>(null)
   const [isEditable, setIsEditable] = createSignal(false)
@@ -98,16 +98,30 @@ export function TreeFileViewer(props: TreeFileViewerProps) {
     setMode("view")
   }
 
+  const enterEditMode = () => {
+    if (isEditable()) {
+      setMode("edit")
+    }
+  }
+
   const goBack = () => {
     setMode("browse")
     setDocConfig(null)
     setViewingPath(null)
   }
 
+  const goBackToView = async () => {
+    const path = viewingPath()
+    if (path) {
+      const config = await loadFileContent(path)
+      setDocConfig(config)
+    }
+    setMode("view")
+  }
+
   return (
-    <Show
-      when={mode() === "view" && docConfig()}
-      fallback={
+    <Switch>
+      <Match when={mode() === "browse" || !docConfig()}>
         <TreeBrowser
           id={props.id}
           config={{ path: props.config?.path, showHidden: props.config?.showHidden }}
@@ -116,19 +130,22 @@ export function TreeFileViewer(props: TreeFileViewerProps) {
           onExit={props.onExit}
           onOpenFile={openFile}
         />
-      }
-    >
-      <Document
-        id={props.id}
-        config={docConfig()!}
-        socketPath={props.socketPath}
-        scenario="view"
-        onExit={goBack}
-        embedded
-        editable={isEditable()}
-        filePath={viewingPath() ?? undefined}
-      />
-    </Show>
+      </Match>
+      <Match when={mode() !== "browse" && docConfig()}>
+        <Document
+          id={props.id}
+          config={docConfig()!}
+          socketPath={props.socketPath}
+          scenario="view"
+          onExit={mode() === "edit" ? goBackToView : goBack}
+          embedded
+          editable={mode() === "edit"}
+          filePath={viewingPath() ?? undefined}
+          onEnterEdit={enterEditMode}
+          canEdit={isEditable()}
+        />
+      </Match>
+    </Switch>
   )
 }
 

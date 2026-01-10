@@ -37,6 +37,7 @@ bun run src/cli.ts spawn document --config '{"content": "# Hello World"}'
 | calendar | display, meeting-picker      | View calendars, pick meeting times  |
 | document | display, edit, email-preview | View/edit markdown content          |
 | flight   | booking                      | Compare flights, select for booking |
+| files    | browse                       | Browse directories, open files      |
 
 ## CLI Commands
 
@@ -62,6 +63,25 @@ Spawn canvas in tmux split pane (non-blocking).
 ```bash
 bun run src/cli.ts spawn calendar --scenario meeting-picker
 ```
+
+### `browse [path]`
+
+Browse files and directories with keyboard navigation. Open files to view content.
+
+```bash
+bun run src/cli.ts browse              # Browse current directory
+bun run src/cli.ts browse ~/Documents  # Browse specific path
+bun run src/cli.ts browse --hidden     # Show hidden files
+```
+
+Keyboard:
+
+- `↑`/`↓` or `j`/`k` - Navigate
+- `Enter`/`→`/`l` - Open file or enter directory
+- `←`/`h`/`Backspace` - Go up to parent directory
+- `.` or `Ctrl+H` - Toggle hidden files
+- `~` - Go to home directory
+- `q` - Quit
 
 ### `env`
 
@@ -162,3 +182,4 @@ Canvases communicate via Unix sockets at `/tmp/canvas-{id}.sock`
 - [Calendar Canvas](../calendar/SKILL.md) - Calendar-specific usage
 - [Document Canvas](../document/SKILL.md) - Document-specific usage
 - [Flight Canvas](../flight/SKILL.md) - Flight-specific usage
+- [File Browser](../files/SKILL.md) - File browser usage

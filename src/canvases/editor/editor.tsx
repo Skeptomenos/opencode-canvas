@@ -3,6 +3,7 @@ import type { ScrollBoxRenderable, MouseEvent } from "@opentui/core"
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import { TextAttributes } from "@opentui/core"
 import { createEditorState, getEditorContent, getCurrentLine, type EditorState } from "./editor-state"
+import { wrapLines, findDisplayLineIndex, type WrappedLine } from "../word-wrap"
 import { checkReadOnly, getReadOnlyReasonMessage, getReadOnlyStatusIndicator } from "./editor-readonly"
 import {
   moveLeft,
@@ -116,8 +117,16 @@ export function Editor(props: EditorProps) {
   const [lastKey, setLastKey] = createSignal<string | null>(null)
   let scrollRef: ScrollBoxRenderable | undefined
   const [statusMessage, setStatusMessage] = createSignal<string | null>(null)
+  const [wrapMode, setWrapMode] = createSignal<"wrap" | "scroll">("wrap")
 
   const visibleHeight = createMemo(() => dimensions().height - 3)
+  const lineNumWidth = 5
+  const contentWidth = createMemo(() => dimensions().width - lineNumWidth - 2)
+
+  const wrappedLines = createMemo(() => {
+    if (wrapMode() === "scroll") return null
+    return wrapLines(editorState().lines, contentWidth())
+  })
 
   onMount(async () => {
     if (props.filePath) {
@@ -135,7 +144,8 @@ export function Editor(props: EditorProps) {
   const ensureCursorVisible = () => {
     if (!scrollRef) return
     const state = editorState()
-    const cursorY = state.cursorLine
+    const wrapped = wrappedLines()
+    const cursorY = wrapped ? findDisplayLineIndex(wrapped, state.cursorLine) : state.cursorLine
     const viewportHeight = scrollRef.height
     const scrollTop = scrollRef.scrollTop
 
@@ -302,6 +312,12 @@ export function Editor(props: EditorProps) {
       } else {
         showTemporaryMessage("No file path specified", 2000)
       }
+      return
+    }
+
+    if (key.ctrl && key.name === "w") {
+      setWrapMode((m) => (m === "wrap" ? "scroll" : "wrap"))
+      showTemporaryMessage(wrapMode() === "wrap" ? "Word wrap enabled" : "Horizontal scroll enabled", 1500)
       return
     }
 
@@ -653,61 +669,112 @@ export function Editor(props: EditorProps) {
       </box>
 
       <scrollbox ref={(r: ScrollBoxRenderable) => (scrollRef = r)} height={visibleHeight()} flexGrow={1}>
-        <Index each={allLines()}>
-          {(line, i) => {
-            const isCursorLine = () => i === editorState().cursorLine
-            const isLineDirty = () => editorState().dirtyLines.has(i)
-            const cursorCol = () => editorState().cursorCol
+        <Show
+          when={wrapMode() === "wrap"}
+          fallback={
+            <Index each={allLines()}>
+              {(line, i) => {
+                const isCursorLine = () => i === editorState().cursorLine
+                const isLineDirty = () => editorState().dirtyLines.has(i)
+                const cursorCol = () => editorState().cursorCol
+                const maxLineWidth = () => dimensions().width - lineNumWidth - 2
+                const displayLine = () => {
+                  const l = line()
+                  return l.length > maxLineWidth() ? l.slice(0, maxLineWidth() - 1) + "…" : l
+                }
+                const lineContent = () => displayLine() || " "
+                const textColor = () => (isLineDirty() ? "#88ff88" : "#ffffff")
+                const lineNumColor = () => (isLineDirty() ? "#88ff88" : "#555555")
 
-            const lineNumWidth = 5
-            const maxLineWidth = () => dimensions().width - lineNumWidth - 2
-            const displayLine = () => {
-              const l = line()
-              return l.length > maxLineWidth() ? l.slice(0, maxLineWidth() - 1) + "…" : l
-            }
-            const lineContent = () => displayLine() || " "
-            const textColor = () => (isLineDirty() ? "#88ff88" : "#ffffff")
-            const lineNumColor = () => (isLineDirty() ? "#88ff88" : "#555555")
+                const handleLineClick = (e: MouseEvent) => {
+                  const clickCol = Math.max(0, e.x - lineNumWidth)
+                  const lineLen = line().length
+                  const clampedCol = Math.min(clickCol, Math.max(0, lineLen - 1))
+                  setEditorState((s) => ({
+                    ...s,
+                    cursorLine: i,
+                    cursorCol: s.mode === "insert" ? Math.min(clickCol, lineLen) : clampedCol,
+                  }))
+                }
 
-            const handleLineClick = (e: MouseEvent) => {
-              const lineNumWidth = 5
-              const clickCol = Math.max(0, e.x - lineNumWidth)
-              const lineLen = line().length
-              const clampedCol = Math.min(clickCol, Math.max(0, lineLen - 1))
-
-              setEditorState((s) => ({
-                ...s,
-                cursorLine: i,
-                cursorCol: s.mode === "insert" ? Math.min(clickCol, lineLen) : clampedCol,
-              }))
-            }
-
-            return (
-              <box
-                flexDirection="row"
-                backgroundColor={isCursorLine() ? "#333366" : undefined}
-                width={dimensions().width}
-                onMouseDown={handleLineClick}
-              >
-                <text fg={lineNumColor()}>{(i + 1).toString().padStart(4)} </text>
-                <Show
-                  when={isCursorLine()}
-                  fallback={<text fg={textColor()}>{lineContent()}</text>}
-                >
-                  <box flexDirection="row">
-                    <text fg={textColor()}>{lineContent().slice(0, cursorCol())}</text>
-                    <box backgroundColor="#ffffff">
-                      <text fg="#000000" attributes={TextAttributes.BOLD}>
-                        {lineContent()[cursorCol()] ?? " "}
-                      </text>
-                    </box>
-                    <text fg={textColor()}>{lineContent().slice(cursorCol() + 1)}</text>
+                return (
+                  <box
+                    flexDirection="row"
+                    backgroundColor={isCursorLine() ? "#333366" : undefined}
+                    width={dimensions().width}
+                    onMouseDown={handleLineClick}
+                  >
+                    <text fg={lineNumColor()}>{(i + 1).toString().padStart(4)} </text>
+                    <Show when={isCursorLine()} fallback={<text fg={textColor()}>{lineContent()}</text>}>
+                      <box flexDirection="row">
+                        <text fg={textColor()}>{lineContent().slice(0, cursorCol())}</text>
+                        <box backgroundColor="#ffffff">
+                          <text fg="#000000" attributes={TextAttributes.BOLD}>
+                            {lineContent()[cursorCol()] ?? " "}
+                          </text>
+                        </box>
+                        <text fg={textColor()}>{lineContent().slice(cursorCol() + 1)}</text>
+                      </box>
+                    </Show>
                   </box>
-                </Show>
-              </box>
-            )
-          }}
-        </Index>
+                )
+              }}
+            </Index>
+          }
+        >
+          <For each={wrappedLines() ?? []}>
+            {(wrappedLine, displayIdx) => {
+              const origIdx = wrappedLine.originalLineIndex
+              const isCursorLine = () => origIdx === editorState().cursorLine
+              const isLineDirty = () => editorState().dirtyLines.has(origIdx)
+              const showLineNum = !wrappedLine.isWrapped
+              const textColor = () => (isLineDirty() ? "#88ff88" : "#ffffff")
+              const lineNumColor = () => (isLineDirty() ? "#88ff88" : "#555555")
+
+              const cursorDisplayIdx = () => {
+                const wrapped = wrappedLines()
+                return wrapped ? findDisplayLineIndex(wrapped, editorState().cursorLine) : -1
+              }
+              const isCursorDisplayLine = () => displayIdx() === cursorDisplayIdx()
+              const cursorCol = () => editorState().cursorCol
+              const lineText = () => wrappedLine.text || " "
+
+              const handleWrappedLineClick = (e: MouseEvent) => {
+                const clickCol = Math.max(0, e.x - lineNumWidth)
+                const originalLine = editorState().lines[origIdx] ?? ""
+                const lineLen = originalLine.length
+                const clampedCol = Math.min(clickCol, Math.max(0, lineLen - 1))
+                setEditorState((s) => ({
+                  ...s,
+                  cursorLine: origIdx,
+                  cursorCol: s.mode === "insert" ? Math.min(clickCol, lineLen) : clampedCol,
+                }))
+              }
+
+              return (
+                <box
+                  flexDirection="row"
+                  backgroundColor={isCursorDisplayLine() ? "#333366" : undefined}
+                  width={dimensions().width}
+                  onMouseDown={handleWrappedLineClick}
+                >
+                  <text fg={lineNumColor()}>{showLineNum ? (origIdx + 1).toString().padStart(4) + " " : "     "}</text>
+                  <Show when={isCursorDisplayLine()} fallback={<text fg={textColor()}>{lineText()}</text>}>
+                    <box flexDirection="row">
+                      <text fg={textColor()}>{lineText().slice(0, cursorCol())}</text>
+                      <box backgroundColor="#ffffff">
+                        <text fg="#000000" attributes={TextAttributes.BOLD}>
+                          {lineText()[cursorCol()] ?? " "}
+                        </text>
+                      </box>
+                      <text fg={textColor()}>{lineText().slice(cursorCol() + 1)}</text>
+                    </box>
+                  </Show>
+                </box>
+              )
+            }}
+          </For>
+        </Show>
       </scrollbox>
 
       <box paddingLeft={1} paddingRight={1} backgroundColor="#222222">

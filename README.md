@@ -40,7 +40,14 @@ Interactive terminal canvases for OpenCode. Inspired by claude-canvas, ported fr
 
 - **File Browser** - Browse directories with flat list or tree view. Navigate folders, open files to view with markdown rendering.
 - **Tree View** - Expand/collapse folders inline. See your project structure at a glance.
-- **Markdown Viewer** - View markdown files with syntax highlighting for headers, bold, italic, code, links, lists, and tables.
+- **Markdown Viewer** - View markdown files with beautiful rendering:
+  - Headers (h1-h4) in cyan with bold styling
+  - Bold, italic, and inline code formatting
+  - Links in blue, blockquotes with gray bar
+  - Bullet and numbered lists with proper indentation
+  - Tables with parsed cell content
+  - Code blocks with orange syntax highlighting
+  - Word wrap for long lines (no horizontal scrolling needed)
 - **Vim-Style Editor** - Full-featured text editor with vim keybindings:
   - **Navigation**: h/j/k/l, arrow keys, w/b (word), 0/$ (line), gg/G (file)
   - **Editing**: i/a/o/O (insert modes), x (delete char), dd (delete line)
@@ -48,6 +55,7 @@ Interactive terminal canvases for OpenCode. Inspired by claude-canvas, ported fr
   - **Undo/Redo**: u (undo), Ctrl+R (redo) with 100-operation history
   - **Commands**: :w (save), :q (quit), :wq (save+quit), :q! (force quit)
   - **Visual Feedback**: Dirty lines highlighted in green until saved
+  - **Word Wrap**: Enabled by default, toggle with Ctrl+W for horizontal scroll
   - **Mouse Support**: Click to position cursor, scroll with mouse/touchpad
   - **Safety**: Auto-backup before save, unsaved changes warning on quit
   - **Read-only Protection**: node_modules, .git, binary files, >1MB files
@@ -110,16 +118,19 @@ Tree view:
 - Period - Toggle hidden files
 - q - Quit
 
-When viewing a file, press q or Escape to return to the browser.
+When viewing a file:
+
+- Up/Down or j/k - Navigate lines
+- PgUp/PgDn - Page up/down
+- q or Escape - Return to browser
+
+Markdown files are rendered with syntax highlighting (headers, bold, code, links, etc.).
 
 ### Edit a File
 
 ```bash
 # Open file directly in edit mode
 bun run src/cli.ts show document --file README.md --edit
-
-# Or from the file browser, files open in edit mode by default
-bun run src/cli.ts browse
 ```
 
 Editor Controls (Normal Mode):
@@ -137,6 +148,7 @@ Editor Controls (Normal Mode):
 - p/P - Paste after/before
 - u - Undo
 - Ctrl+R - Redo
+- Ctrl+W - Toggle word wrap / horizontal scroll
 - :w - Save
 - :q - Quit
 - :wq - Save and quit
@@ -159,8 +171,9 @@ Mouse/Touchpad:
 Visual Feedback:
 
 - Modified lines are highlighted in green until saved
-- Status bar shows mode, filename, dirty indicator (*), and cursor position
-- Title bar shows * when file has unsaved changes
+- Status bar shows mode, filename, dirty indicator (\*), and cursor position
+- Title bar shows \* when file has unsaved changes
+- Word wrap enabled by default (toggle with Ctrl+W for horizontal scroll)
 
 Read-only files (node_modules, .git, binary, >1MB) show a warning and cannot be edited.
 

@@ -6,6 +6,7 @@ import type { DocumentConfig, DocumentSelection, DocumentContent } from "./docum
 import { useIPCServer } from "./calendar/hooks/use-ipc-server"
 import { MarkdownLine, isCodeFence } from "./markdown-renderer"
 import { Editor } from "./editor/editor"
+import { wrapLines, findDisplayLineIndex } from "./word-wrap"
 
 export interface DocumentProps {
   id: string
@@ -16,6 +17,8 @@ export interface DocumentProps {
   embedded?: boolean
   editable?: boolean
   filePath?: string
+  onEnterEdit?: () => void
+  canEdit?: boolean
 }
 
 export function Document(props: DocumentProps) {
@@ -35,6 +38,10 @@ export function Document(props: DocumentProps) {
   const [selectionEnd, setSelectionEnd] = createSignal<number | null>(null)
 
   const visibleHeight = createMemo(() => dimensions().height - 4)
+  const lineNumWidth = 5
+  const contentWidth = createMemo(() => dimensions().width - lineNumWidth - 2)
+
+  const wrappedLines = createMemo(() => wrapLines(lines(), contentWidth()))
 
   const getSelection = (): DocumentSelection | null => {
     const start = selectionStart()
@@ -71,7 +78,21 @@ export function Document(props: DocumentProps) {
     ipc.sendReady()
   })
 
+  const ensureCursorVisible = () => {
+    if (!scrollRef) return
+    const displayIndex = findDisplayLineIndex(wrappedLines(), cursorLine())
+    const viewportHeight = scrollRef.height
+    const scrollTop = scrollRef.scrollTop
+    if (displayIndex < scrollTop) {
+      scrollRef.scrollTo(displayIndex)
+    } else if (displayIndex >= scrollTop + viewportHeight) {
+      scrollRef.scrollTo(displayIndex - viewportHeight + 1)
+    }
+  }
+
   useKeyboard((key) => {
+    if (props.editable) return
+
     const isEscape = key.name === "escape" || key.sequence === "\x1b"
     const isQuit = key.name === "q"
 
@@ -87,26 +108,21 @@ export function Document(props: DocumentProps) {
       return
     }
 
-    const ensureCursorVisible = () => {
-      if (!scrollRef) return
-      const cursor = cursorLine()
-      const viewportHeight = scrollRef.height
-      const scrollTop = scrollRef.scrollTop
-      if (cursor < scrollTop) {
-        scrollRef.scrollTo(cursor)
-      } else if (cursor >= scrollTop + viewportHeight) {
-        scrollRef.scrollTo(cursor - viewportHeight + 1)
-      }
+    if (key.sequence === "e" && props.canEdit && props.onEnterEdit) {
+      props.onEnterEdit()
+      return
     }
 
-    if (key.name === "up") {
+    if (key.name === "up" || key.name === "k") {
       setCursorLine((l) => Math.max(0, l - 1))
       ensureCursorVisible()
+      return
     }
 
-    if (key.name === "down") {
+    if (key.name === "down" || key.name === "j") {
       setCursorLine((l) => Math.min(lines().length - 1, l + 1))
       ensureCursorVisible()
+      return
     }
 
     if (key.name === "pageup") {
@@ -146,7 +162,7 @@ export function Document(props: DocumentProps) {
     }
   })
 
-  const allLines = createMemo(() => lines())
+  const allWrappedLines = createMemo(() => wrappedLines())
 
   const isLineSelected = (lineIndex: number): boolean => {
     const start = selectionStart()
@@ -209,29 +225,26 @@ export function Document(props: DocumentProps) {
       )}
 
       <scrollbox ref={(r: ScrollBoxRenderable) => (scrollRef = r)} height={visibleHeight()} flexGrow={1}>
-        <For each={allLines()}>
-          {(line, i) => {
-            const lineIndex = i()
-            const isCursor = lineIndex === cursorLine()
-            const isSelected = isLineSelected(lineIndex)
-
-            const inCodeBlock = codeBlockState()[lineIndex] || false
-            const lineNumWidth = 5
-            const maxLineWidth = dimensions().width - lineNumWidth - 2
-            const displayLine = line.length > maxLineWidth ? line.slice(0, maxLineWidth - 1) + "…" : line
+        <For each={allWrappedLines()}>
+          {(wrappedLine) => {
+            const originalIndex = wrappedLine.originalLineIndex
+            const isCursor = () => originalIndex === cursorLine()
+            const isSelected = () => isLineSelected(originalIndex)
+            const inCodeBlock = () => codeBlockState()[originalIndex] || false
+            const showLineNum = !wrappedLine.isWrapped
 
             return (
               <box
                 flexDirection="row"
-                backgroundColor={isCursor ? "#333366" : isSelected ? "#333333" : undefined}
+                backgroundColor={isCursor() ? "#333366" : isSelected() ? "#333333" : undefined}
                 width={dimensions().width}
               >
-                <text fg="#555555">{(lineIndex + 1).toString().padStart(4)} </text>
+                <text fg="#555555">{showLineNum ? (originalIndex + 1).toString().padStart(4) + " " : "     "}</text>
                 {format === "markdown" ? (
-                  <MarkdownLine line={displayLine || " "} inCodeBlock={inCodeBlock} />
+                  <MarkdownLine line={wrappedLine.text || " "} inCodeBlock={inCodeBlock()} />
                 ) : (
-                  <text attributes={isCursor ? TextAttributes.BOLD : 0} fg="#ffffff">
-                    {displayLine || " "}
+                  <text attributes={isCursor() ? TextAttributes.BOLD : 0} fg="#ffffff">
+                    {wrappedLine.text || " "}
                   </text>
                 )}
               </box>
@@ -241,7 +254,7 @@ export function Document(props: DocumentProps) {
       </scrollbox>
 
       <box paddingLeft={1} paddingRight={1} backgroundColor="#222222">
-        <text fg="#808080">[↑/↓] Navigate [PgUp/PgDn] Page [Shift+↑/↓] Select [Enter] Confirm [q] Quit</text>
+        <text fg="#808080">[↑/↓] Navigate [PgUp/PgDn] Page {props.canEdit ? "[e] Edit " : ""}[q] Quit</text>
       </box>
     </box>
   )
