@@ -188,3 +188,42 @@ export function enterInsertModeAtStart(state: EditorState): EditorState {
     cursorCol: 0,
   }
 }
+
+export function deleteCharUnderCursor(state: EditorState): EditorState {
+  if (state.isReadOnly || state.mode !== "normal") {
+    return state
+  }
+
+  const line = getCurrentLine(state)
+
+  if (line.length === 0) {
+    return state
+  }
+
+  if (state.cursorCol >= line.length) {
+    return state
+  }
+
+  const before = line.slice(0, state.cursorCol)
+  const after = line.slice(state.cursorCol + 1)
+  const newLine = before + after
+
+  const newLines = [...state.lines]
+  newLines[state.cursorLine] = newLine
+
+  const newCursorCol = newLine.length === 0 ? 0 : Math.min(state.cursorCol, newLine.length - 1)
+
+  return {
+    ...state,
+    lines: newLines,
+    cursorCol: newCursorCol,
+    isDirty: true,
+  }
+}
+
+export function shouldTriggerDeleteCharUnderCursor(
+  key: { ctrl?: boolean; name?: string; sequence?: string },
+  mode: "normal" | "insert"
+): boolean {
+  return mode === "normal" && key.name === "x" && !key.ctrl
+}
