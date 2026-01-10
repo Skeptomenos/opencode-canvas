@@ -128,3 +128,63 @@ export function getPrintableChar(sequence: string): string | null {
   }
   return null
 }
+
+export function openLineBelow(state: EditorState): EditorState {
+  if (state.isReadOnly) {
+    return state
+  }
+
+  const newLines = [...state.lines]
+  newLines.splice(state.cursorLine + 1, 0, "")
+
+  return {
+    ...state,
+    lines: newLines,
+    cursorLine: state.cursorLine + 1,
+    cursorCol: 0,
+    mode: "insert",
+    isDirty: true,
+  }
+}
+
+export function openLineAbove(state: EditorState): EditorState {
+  if (state.isReadOnly) {
+    return state
+  }
+
+  const newLines = [...state.lines]
+  newLines.splice(state.cursorLine, 0, "")
+
+  return {
+    ...state,
+    lines: newLines,
+    cursorCol: 0,
+    mode: "insert",
+    isDirty: true,
+  }
+}
+
+export function enterInsertModeAtEnd(state: EditorState): EditorState {
+  if (state.isReadOnly) {
+    return state
+  }
+
+  const line = getCurrentLine(state)
+  return {
+    ...state,
+    mode: "insert",
+    cursorCol: line.length,
+  }
+}
+
+export function enterInsertModeAtStart(state: EditorState): EditorState {
+  if (state.isReadOnly) {
+    return state
+  }
+
+  return {
+    ...state,
+    mode: "insert",
+    cursorCol: 0,
+  }
+}
