@@ -1,5 +1,7 @@
 export type EditorMode = "normal" | "insert"
 
+export type ReadOnlyReason = "node_modules" | "git_directory" | "binary_file" | "file_too_large" | null
+
 export interface EditorState {
   mode: EditorMode
   lines: string[]
@@ -8,12 +10,14 @@ export interface EditorState {
   isDirty: boolean
   filePath: string | null
   isReadOnly: boolean
+  isReadOnlyReason: ReadOnlyReason
 }
 
 export interface CreateEditorStateOptions {
   content?: string
   filePath?: string | null
   isReadOnly?: boolean
+  isReadOnlyReason?: ReadOnlyReason
 }
 
 export function createEditorState(options: CreateEditorStateOptions = {}): EditorState {
@@ -32,6 +36,7 @@ export function createEditorState(options: CreateEditorStateOptions = {}): Edito
     isDirty: false,
     filePath: options.filePath ?? null,
     isReadOnly: options.isReadOnly ?? false,
+    isReadOnlyReason: options.isReadOnlyReason ?? null,
   }
 }
 
