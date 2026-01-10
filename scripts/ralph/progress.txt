@@ -31,3 +31,50 @@ Started: Sat Jan 10 09:45:40 CET 2026
   - Use Math.max(0, line.length - 1) for normal mode cursor bounds
   - moveToFirstLine and moveToLastLine reset cursor column to 0
 ---
+
+## Sat Jan 10 2026 - US-003
+- What was implemented: Insert mode with basic typing
+- Files changed: src/canvases/editor/editor-insert.ts (new file)
+- **Learnings for future iterations:**
+  - Insert mode functions: enterInsertMode (i), enterInsertModeAfter (a), exitInsertMode (Escape)
+  - insertChar inserts at cursor, updates isDirty
+  - deleteCharBefore handles backspace, joins lines when at column 0
+  - insertNewLine splits line at cursor position
+  - getModeIndicator returns "-- INSERT --" or "-- NORMAL --"
+  - getPrintableChar filters printable ASCII (32-126)
+  - All functions check isReadOnly before modifying state
+---
+
+## Sat Jan 10 2026 - US-004
+- What was implemented: Save with confirmation and backup functionality
+- Files changed:
+  - src/canvases/editor/editor-save.ts (new file)
+  - src/canvases/editor/editor-command.ts (new file)
+- **Learnings for future iterations:**
+  - SaveState tracks: promptState ("none" | "confirming" | "saved"), message, messageTimeout
+  - performSave() creates backup before writing, returns { success, error? }
+  - createBackup() writes {filename}.bak using Bun.file() and Bun.write()
+  - markAsSaved() sets isDirty to false after successful save
+  - shouldTriggerSave() detects Ctrl+S key combo
+  - CommandState manages vim-style command buffer (mode: "none" | "active", buffer: string)
+  - parseCommand() returns typed union: save, quit, save_quit, force_quit, unknown
+  - shouldStartCommandMode() checks for ":" key in normal mode
+  - Separate command module from save module for clean separation of concerns
+---
+
+## Sat Jan 10 2026 - US-005
+- What was implemented: Quit with unsaved changes warning
+- Files changed:
+  - src/canvases/editor/editor-quit.ts (new file)
+- **Learnings for future iterations:**
+  - QuitState tracks: promptState ("none" | "confirming" | "quitting"), message, shouldQuit, quitAction
+  - quitAction is a union: "save_and_quit" | "quit_without_save" | "cancel" | null
+  - canQuitImmediately(editorState) checks if isDirty is false
+  - startQuitConfirmation() shows prompt "Unsaved changes. Save before quitting? [y/n/c]"
+  - y = confirmQuitWithSave(), n = confirmQuitWithoutSave(), c = cancelQuitConfirmation()
+  - handleSaveAndQuit() performs save before quit, returns { success, newState, error? }
+  - getTitleWithDirtyIndicator(title, isDirty) returns "title *" when dirty
+  - getFilenameWithDirtyIndicator(filePath, isDirty) returns "filename *" when dirty
+  - forceQuit() is used for :q! command, bypasses isDirty check
+  - The :wq command is parsed in editor-command.ts as "save_quit" type
+---
