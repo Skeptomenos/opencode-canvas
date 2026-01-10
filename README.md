@@ -41,7 +41,16 @@ Interactive terminal canvases for OpenCode. Inspired by claude-canvas, ported fr
 - **File Browser** - Browse directories with flat list or tree view. Navigate folders, open files to view with markdown rendering.
 - **Tree View** - Expand/collapse folders inline. See your project structure at a glance.
 - **Markdown Viewer** - View markdown files with syntax highlighting for headers, bold, italic, code, links, lists, and tables.
-- **Vim-Style Editor** - Edit files with familiar vim keybindings (h/j/k/l, i/a/o, dd/yy/p, :w/:q). Includes undo/redo, save with backup, unsaved changes warning, and dirty line highlighting (modified lines shown in green until saved).
+- **Vim-Style Editor** - Full-featured text editor with vim keybindings:
+  - **Navigation**: h/j/k/l, arrow keys, w/b (word), 0/$ (line), gg/G (file)
+  - **Editing**: i/a/o/O (insert modes), x (delete char), dd (delete line)
+  - **Clipboard**: yy (yank), p/P (paste after/before)
+  - **Undo/Redo**: u (undo), Ctrl+R (redo) with 100-operation history
+  - **Commands**: :w (save), :q (quit), :wq (save+quit), :q! (force quit)
+  - **Visual Feedback**: Dirty lines highlighted in green until saved
+  - **Mouse Support**: Click to position cursor, scroll with mouse/touchpad
+  - **Safety**: Auto-backup before save, unsaved changes warning on quit
+  - **Read-only Protection**: node_modules, .git, binary files, >1MB files
 - **Calendar Canvas** - Week view calendar with time slot selection for meeting scheduling.
 - **Flight Canvas** - Compare flight options in a table format.
 - **IPC System** - Unix socket communication for programmatic control.
@@ -141,6 +150,17 @@ Editor Controls (Insert Mode):
 - Arrow keys - Navigate
 - Escape - Return to normal mode
 - Ctrl+S - Save
+
+Mouse/Touchpad:
+
+- Click anywhere to position cursor
+- Scroll with mouse wheel or touchpad gestures
+
+Visual Feedback:
+
+- Modified lines are highlighted in green until saved
+- Status bar shows mode, filename, dirty indicator (*), and cursor position
+- Title bar shows * when file has unsaved changes
 
 Read-only files (node_modules, .git, binary, >1MB) show a warning and cannot be edited.
 

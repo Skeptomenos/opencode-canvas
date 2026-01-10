@@ -1,4 +1,5 @@
-import { createSignal, createMemo, Index, For, Show, onMount, onCleanup } from "solid-js"
+import { createSignal, createMemo, Index, For, Show, onMount, onCleanup, createEffect } from "solid-js"
+import type { ScrollBoxRenderable, MouseEvent } from "@opentui/core"
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import { TextAttributes } from "@opentui/core"
 import { createEditorState, getEditorContent, getCurrentLine, type EditorState } from "./editor-state"
@@ -112,8 +113,8 @@ export function Editor(props: EditorProps) {
   const [quitState, setQuitState] = createSignal<QuitState>(createQuitState())
   const [undoState, setUndoState] = createSignal<UndoState>(createUndoState())
   const [clipboardState, setClipboardState] = createSignal<ClipboardState>(createClipboardState())
-  const [scrollOffset, setScrollOffset] = createSignal(0)
   const [lastKey, setLastKey] = createSignal<string | null>(null)
+  let scrollRef: ScrollBoxRenderable | undefined
   const [statusMessage, setStatusMessage] = createSignal<string | null>(null)
 
   const visibleHeight = createMemo(() => dimensions().height - 3)
@@ -132,14 +133,16 @@ export function Editor(props: EditorProps) {
   })
 
   const ensureCursorVisible = () => {
+    if (!scrollRef) return
     const state = editorState()
-    const offset = scrollOffset()
-    const height = visibleHeight()
+    const cursorY = state.cursorLine
+    const viewportHeight = scrollRef.height
+    const scrollTop = scrollRef.scrollTop
 
-    if (state.cursorLine < offset) {
-      setScrollOffset(state.cursorLine)
-    } else if (state.cursorLine >= offset + height) {
-      setScrollOffset(state.cursorLine - height + 1)
+    if (cursorY < scrollTop) {
+      scrollRef.scrollTo(cursorY)
+    } else if (cursorY >= scrollTop + viewportHeight) {
+      scrollRef.scrollTo(cursorY - viewportHeight + 1)
     }
   }
 
@@ -582,12 +585,7 @@ export function Editor(props: EditorProps) {
     }
   })
 
-  const visibleLines = createMemo(() => {
-    const state = editorState()
-    const offset = scrollOffset()
-    const height = visibleHeight()
-    return state.lines.slice(offset, offset + height)
-  })
+  const allLines = createMemo(() => editorState().lines)
 
   const displayTitle = createMemo(() => {
     const state = editorState()
@@ -654,12 +652,11 @@ export function Editor(props: EditorProps) {
         </text>
       </box>
 
-      <scrollbox height={visibleHeight()} flexGrow={1}>
-        <Index each={visibleLines()}>
+      <scrollbox ref={(r: ScrollBoxRenderable) => (scrollRef = r)} height={visibleHeight()} flexGrow={1}>
+        <Index each={allLines()}>
           {(line, i) => {
-            const actualLineIndex = () => scrollOffset() + i
-            const isCursorLine = () => actualLineIndex() === editorState().cursorLine
-            const isLineDirty = () => editorState().dirtyLines.has(actualLineIndex())
+            const isCursorLine = () => i === editorState().cursorLine
+            const isLineDirty = () => editorState().dirtyLines.has(i)
             const cursorCol = () => editorState().cursorCol
 
             const lineNumWidth = 5
@@ -672,13 +669,27 @@ export function Editor(props: EditorProps) {
             const textColor = () => (isLineDirty() ? "#88ff88" : "#ffffff")
             const lineNumColor = () => (isLineDirty() ? "#88ff88" : "#555555")
 
+            const handleLineClick = (e: MouseEvent) => {
+              const lineNumWidth = 5
+              const clickCol = Math.max(0, e.x - lineNumWidth)
+              const lineLen = line().length
+              const clampedCol = Math.min(clickCol, Math.max(0, lineLen - 1))
+
+              setEditorState((s) => ({
+                ...s,
+                cursorLine: i,
+                cursorCol: s.mode === "insert" ? Math.min(clickCol, lineLen) : clampedCol,
+              }))
+            }
+
             return (
               <box
                 flexDirection="row"
                 backgroundColor={isCursorLine() ? "#333366" : undefined}
                 width={dimensions().width}
+                onMouseDown={handleLineClick}
               >
-                <text fg={lineNumColor()}>{(actualLineIndex() + 1).toString().padStart(4)} </text>
+                <text fg={lineNumColor()}>{(i + 1).toString().padStart(4)} </text>
                 <Show
                   when={isCursorLine()}
                   fallback={<text fg={textColor()}>{lineContent()}</text>}

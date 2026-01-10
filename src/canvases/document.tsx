@@ -1,6 +1,7 @@
 import { createSignal, createMemo, For, onMount, Show } from "solid-js"
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import { TextAttributes } from "@opentui/core"
+import type { ScrollBoxRenderable } from "@opentui/core"
 import type { DocumentConfig, DocumentSelection, DocumentContent } from "./document/types"
 import { useIPCServer } from "./calendar/hooks/use-ipc-server"
 import { MarkdownLine, isCodeFence } from "./markdown-renderer"
@@ -28,8 +29,8 @@ export function Document(props: DocumentProps) {
   const readOnly = config.readOnly ?? true
 
   const lines = createMemo(() => content.split("\n"))
-  const [scrollOffset, setScrollOffset] = createSignal(0)
   const [cursorLine, setCursorLine] = createSignal(0)
+  let scrollRef: ScrollBoxRenderable | undefined
   const [selectionStart, setSelectionStart] = createSignal<number | null>(null)
   const [selectionEnd, setSelectionEnd] = createSignal<number | null>(null)
 
@@ -86,40 +87,48 @@ export function Document(props: DocumentProps) {
       return
     }
 
+    const ensureCursorVisible = () => {
+      if (!scrollRef) return
+      const cursor = cursorLine()
+      const viewportHeight = scrollRef.height
+      const scrollTop = scrollRef.scrollTop
+      if (cursor < scrollTop) {
+        scrollRef.scrollTo(cursor)
+      } else if (cursor >= scrollTop + viewportHeight) {
+        scrollRef.scrollTo(cursor - viewportHeight + 1)
+      }
+    }
+
     if (key.name === "up") {
       setCursorLine((l) => Math.max(0, l - 1))
-      if (cursorLine() < scrollOffset()) {
-        setScrollOffset(cursorLine())
-      }
+      ensureCursorVisible()
     }
 
     if (key.name === "down") {
       setCursorLine((l) => Math.min(lines().length - 1, l + 1))
-      if (cursorLine() >= scrollOffset() + visibleHeight()) {
-        setScrollOffset(cursorLine() - visibleHeight() + 1)
-      }
+      ensureCursorVisible()
     }
 
     if (key.name === "pageup") {
       const jump = visibleHeight()
       setCursorLine((l) => Math.max(0, l - jump))
-      setScrollOffset((o) => Math.max(0, o - jump))
+      if (scrollRef) scrollRef.scrollBy(-jump)
     }
 
     if (key.name === "pagedown") {
       const jump = visibleHeight()
       setCursorLine((l) => Math.min(lines().length - 1, l + jump))
-      setScrollOffset((o) => Math.min(Math.max(0, lines().length - visibleHeight()), o + jump))
+      if (scrollRef) scrollRef.scrollBy(jump)
     }
 
     if (key.name === "home" || (key.ctrl && key.name === "a")) {
       setCursorLine(0)
-      setScrollOffset(0)
+      if (scrollRef) scrollRef.scrollTo(0)
     }
 
     if (key.name === "end" || (key.ctrl && key.name === "e")) {
       setCursorLine(lines().length - 1)
-      setScrollOffset(Math.max(0, lines().length - visibleHeight()))
+      if (scrollRef) scrollRef.scrollTo(scrollRef.scrollHeight)
     }
 
     if (key.shift && (key.name === "up" || key.name === "down")) {
@@ -137,11 +146,7 @@ export function Document(props: DocumentProps) {
     }
   })
 
-  const visibleLines = createMemo(() => {
-    const offset = scrollOffset()
-    const height = visibleHeight()
-    return lines().slice(offset, offset + height)
-  })
+  const allLines = createMemo(() => lines())
 
   const isLineSelected = (lineIndex: number): boolean => {
     const start = selectionStart()
@@ -203,14 +208,14 @@ export function Document(props: DocumentProps) {
         </box>
       )}
 
-      <scrollbox height={visibleHeight()} flexGrow={1}>
-        <For each={visibleLines()}>
+      <scrollbox ref={(r: ScrollBoxRenderable) => (scrollRef = r)} height={visibleHeight()} flexGrow={1}>
+        <For each={allLines()}>
           {(line, i) => {
-            const actualLineIndex = scrollOffset() + i()
-            const isCursor = actualLineIndex === cursorLine()
-            const isSelected = isLineSelected(actualLineIndex)
+            const lineIndex = i()
+            const isCursor = lineIndex === cursorLine()
+            const isSelected = isLineSelected(lineIndex)
 
-            const inCodeBlock = codeBlockState()[actualLineIndex] || false
+            const inCodeBlock = codeBlockState()[lineIndex] || false
             const lineNumWidth = 5
             const maxLineWidth = dimensions().width - lineNumWidth - 2
             const displayLine = line.length > maxLineWidth ? line.slice(0, maxLineWidth - 1) + "…" : line
@@ -221,7 +226,7 @@ export function Document(props: DocumentProps) {
                 backgroundColor={isCursor ? "#333366" : isSelected ? "#333333" : undefined}
                 width={dimensions().width}
               >
-                <text fg="#555555">{(actualLineIndex + 1).toString().padStart(4)} </text>
+                <text fg="#555555">{(lineIndex + 1).toString().padStart(4)} </text>
                 {format === "markdown" ? (
                   <MarkdownLine line={displayLine || " "} inCodeBlock={inCodeBlock} />
                 ) : (
