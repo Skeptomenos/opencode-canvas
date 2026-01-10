@@ -622,9 +622,14 @@ export function Editor(props: EditorProps) {
     const mode = getModeIndicator(state)
     const readOnly = getReadOnlyStatusIndicator(state.isReadOnly)
     const position = `Line ${state.cursorLine + 1}/${state.lines.length} Col ${state.cursorCol + 1}`
-    const dirtyIndicator = state.isDirty ? "*" : ""
+    const dirtyIndicator = state.isDirty ? " *" : ""
 
-    return `${mode} ${props.title}${dirtyIndicator} ${readOnly} ${position}`.trim().replace(/\s+/g, " ")
+    const statusParts = [mode, props.title + dirtyIndicator]
+    if (readOnly) {
+      statusParts.push(readOnly)
+    }
+    statusParts.push(position)
+    return statusParts.join(" ")
   })
 
   const statusBarColor = createMemo(() => {
