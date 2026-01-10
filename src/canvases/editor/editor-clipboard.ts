@@ -52,12 +52,16 @@ export function deleteLine(
   const newLine = newLines[newCursorLine] ?? ""
   const newCursorCol = Math.min(editorState.cursorCol, Math.max(0, newLine.length - 1))
 
+  const newDirtyLines = new Set(editorState.dirtyLines)
+  newDirtyLines.add(newCursorLine)
+
   const newEditorState: EditorState = {
     ...editorState,
     lines: newLines,
     cursorLine: newCursorLine,
     cursorCol: newCursorCol,
     isDirty: true,
+    dirtyLines: newDirtyLines,
   }
 
   return { editorState: newEditorState, clipboardState: newClipboardState }
@@ -80,12 +84,18 @@ export function pasteAfter(editorState: EditorState, clipboardState: ClipboardSt
   const insertIndex = editorState.cursorLine + 1
   newLines.splice(insertIndex, 0, ...clipboardState.content.lines)
 
+  const newDirtyLines = new Set(editorState.dirtyLines)
+  for (let i = 0; i < clipboardState.content.lines.length; i++) {
+    newDirtyLines.add(insertIndex + i)
+  }
+
   return {
     ...editorState,
     lines: newLines,
     cursorLine: insertIndex,
     cursorCol: 0,
     isDirty: true,
+    dirtyLines: newDirtyLines,
   }
 }
 
@@ -106,12 +116,18 @@ export function pasteBefore(editorState: EditorState, clipboardState: ClipboardS
   const insertIndex = editorState.cursorLine
   newLines.splice(insertIndex, 0, ...clipboardState.content.lines)
 
+  const newDirtyLines = new Set(editorState.dirtyLines)
+  for (let i = 0; i < clipboardState.content.lines.length; i++) {
+    newDirtyLines.add(insertIndex + i)
+  }
+
   return {
     ...editorState,
     lines: newLines,
     cursorLine: insertIndex,
     cursorCol: 0,
     isDirty: true,
+    dirtyLines: newDirtyLines,
   }
 }
 

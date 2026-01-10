@@ -112,6 +112,7 @@ export function markAsSaved(state: EditorState): EditorState {
   return {
     ...state,
     isDirty: false,
+    dirtyLines: new Set<number>(),
   }
 }
 

@@ -46,11 +46,15 @@ export function insertChar(state: EditorState, char: string): EditorState {
   const newLines = [...state.lines]
   newLines[state.cursorLine] = newLine
 
+  const newDirtyLines = new Set(state.dirtyLines)
+  newDirtyLines.add(state.cursorLine)
+
   return {
     ...state,
     lines: newLines,
     cursorCol: state.cursorCol + char.length,
     isDirty: true,
+    dirtyLines: newDirtyLines,
   }
 }
 
@@ -73,12 +77,16 @@ export function deleteCharBefore(state: EditorState): EditorState {
     const newLines = [...state.lines]
     newLines.splice(state.cursorLine - 1, 2, joinedLine)
 
+    const newDirtyLines = new Set(state.dirtyLines)
+    newDirtyLines.add(state.cursorLine - 1)
+
     return {
       ...state,
       lines: newLines,
       cursorLine: state.cursorLine - 1,
       cursorCol: newCursorCol,
       isDirty: true,
+      dirtyLines: newDirtyLines,
     }
   }
 
@@ -89,11 +97,15 @@ export function deleteCharBefore(state: EditorState): EditorState {
   const newLines = [...state.lines]
   newLines[state.cursorLine] = newLine
 
+  const newDirtyLines = new Set(state.dirtyLines)
+  newDirtyLines.add(state.cursorLine)
+
   return {
     ...state,
     lines: newLines,
     cursorCol: state.cursorCol - 1,
     isDirty: true,
+    dirtyLines: newDirtyLines,
   }
 }
 
@@ -109,12 +121,17 @@ export function insertNewLine(state: EditorState): EditorState {
   const newLines = [...state.lines]
   newLines.splice(state.cursorLine, 1, before, after)
 
+  const newDirtyLines = new Set(state.dirtyLines)
+  newDirtyLines.add(state.cursorLine)
+  newDirtyLines.add(state.cursorLine + 1)
+
   return {
     ...state,
     lines: newLines,
     cursorLine: state.cursorLine + 1,
     cursorCol: 0,
     isDirty: true,
+    dirtyLines: newDirtyLines,
   }
 }
 
@@ -137,6 +154,9 @@ export function openLineBelow(state: EditorState): EditorState {
   const newLines = [...state.lines]
   newLines.splice(state.cursorLine + 1, 0, "")
 
+  const newDirtyLines = new Set(state.dirtyLines)
+  newDirtyLines.add(state.cursorLine + 1)
+
   return {
     ...state,
     lines: newLines,
@@ -144,6 +164,7 @@ export function openLineBelow(state: EditorState): EditorState {
     cursorCol: 0,
     mode: "insert",
     isDirty: true,
+    dirtyLines: newDirtyLines,
   }
 }
 
@@ -155,12 +176,16 @@ export function openLineAbove(state: EditorState): EditorState {
   const newLines = [...state.lines]
   newLines.splice(state.cursorLine, 0, "")
 
+  const newDirtyLines = new Set(state.dirtyLines)
+  newDirtyLines.add(state.cursorLine)
+
   return {
     ...state,
     lines: newLines,
     cursorCol: 0,
     mode: "insert",
     isDirty: true,
+    dirtyLines: newDirtyLines,
   }
 }
 
@@ -213,11 +238,15 @@ export function deleteCharUnderCursor(state: EditorState): EditorState {
 
   const newCursorCol = newLine.length === 0 ? 0 : Math.min(state.cursorCol, newLine.length - 1)
 
+  const newDirtyLines = new Set(state.dirtyLines)
+  newDirtyLines.add(state.cursorLine)
+
   return {
     ...state,
     lines: newLines,
     cursorCol: newCursorCol,
     isDirty: true,
+    dirtyLines: newDirtyLines,
   }
 }
 

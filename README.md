@@ -41,7 +41,7 @@ Interactive terminal canvases for OpenCode. Inspired by claude-canvas, ported fr
 - **File Browser** - Browse directories with flat list or tree view. Navigate folders, open files to view with markdown rendering.
 - **Tree View** - Expand/collapse folders inline. See your project structure at a glance.
 - **Markdown Viewer** - View markdown files with syntax highlighting for headers, bold, italic, code, links, lists, and tables.
-- **Vim-Style Editor** - Edit files with familiar vim keybindings (h/j/k/l, i/a/o, dd/yy/p, :w/:q). Includes undo/redo, save with backup, and unsaved changes warning.
+- **Vim-Style Editor** - Edit files with familiar vim keybindings (h/j/k/l, i/a/o, dd/yy/p, :w/:q). Includes undo/redo, save with backup, unsaved changes warning, and dirty line highlighting (modified lines shown in green until saved).
 - **Calendar Canvas** - Week view calendar with time slot selection for meeting scheduling.
 - **Flight Canvas** - Compare flight options in a table format.
 - **IPC System** - Unix socket communication for programmatic control.

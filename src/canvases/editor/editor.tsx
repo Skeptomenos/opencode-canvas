@@ -659,6 +659,7 @@ export function Editor(props: EditorProps) {
           {(line, i) => {
             const actualLineIndex = () => scrollOffset() + i
             const isCursorLine = () => actualLineIndex() === editorState().cursorLine
+            const isLineDirty = () => editorState().dirtyLines.has(actualLineIndex())
             const cursorCol = () => editorState().cursorCol
 
             const lineNumWidth = 5
@@ -668,6 +669,8 @@ export function Editor(props: EditorProps) {
               return l.length > maxLineWidth() ? l.slice(0, maxLineWidth() - 1) + "…" : l
             }
             const lineContent = () => displayLine() || " "
+            const textColor = () => (isLineDirty() ? "#88ff88" : "#ffffff")
+            const lineNumColor = () => (isLineDirty() ? "#88ff88" : "#555555")
 
             return (
               <box
@@ -675,19 +678,19 @@ export function Editor(props: EditorProps) {
                 backgroundColor={isCursorLine() ? "#333366" : undefined}
                 width={dimensions().width}
               >
-                <text fg="#555555">{(actualLineIndex() + 1).toString().padStart(4)} </text>
+                <text fg={lineNumColor()}>{(actualLineIndex() + 1).toString().padStart(4)} </text>
                 <Show
                   when={isCursorLine()}
-                  fallback={<text fg="#ffffff">{lineContent()}</text>}
+                  fallback={<text fg={textColor()}>{lineContent()}</text>}
                 >
                   <box flexDirection="row">
-                    <text fg="#ffffff">{lineContent().slice(0, cursorCol())}</text>
+                    <text fg={textColor()}>{lineContent().slice(0, cursorCol())}</text>
                     <box backgroundColor="#ffffff">
                       <text fg="#000000" attributes={TextAttributes.BOLD}>
                         {lineContent()[cursorCol()] ?? " "}
                       </text>
                     </box>
-                    <text fg="#ffffff">{lineContent().slice(cursorCol() + 1)}</text>
+                    <text fg={textColor()}>{lineContent().slice(cursorCol() + 1)}</text>
                   </box>
                 </Show>
               </box>
