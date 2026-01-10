@@ -2,6 +2,35 @@
 
 Interactive terminal canvases for OpenCode. A port of [claude-canvas](https://github.com/dvdsgl/claude-canvas) from React/Ink to SolidJS/OpenTUI.
 
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ tmux: opencode                                                            ─ □ x │
+├─────────────────────────────────────┬───────────────────────────────────────────┤
+│  OpenCode TUI                       │  Calendar Canvas                          │
+│                                     │                                           │
+│  > Implement auth module            │  ◀ January 2026 ▶                         │
+│                                     │                                           │
+│  ┌─────────────────────────────┐    │  Mon   Tue   Wed   Thu   Fri   Sat   Sun  │
+│  │ I'll help implement the    │    │  ───────────────────────────────────────  │
+│  │ authentication module.     │    │                1     2     3     4     5  │
+│  │                            │    │   6     7     8    [9]   10    11    12  │
+│  │ First, let me spawn a      │    │  13    14    15    16    17    18    19  │
+│  │ calendar to pick a time    │    │  20    21    22    23    24    25    26  │
+│  │ for the review meeting...  │    │  27    28    29    30    31              │
+│  │                            │    │                                           │
+│  │ ████████████░░░░░░░░░░░░░  │    │  ┌─────────────────────────────────────┐  │
+│  │ Spawning calendar...       │    │  │ 09:00  Team Standup                 │  │
+│  └─────────────────────────────┘    │  │ 10:30  ░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  │
+│                                     │  │ 11:00  ░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  │
+│  [?] Help  [q] Quit                 │  │ 14:00  Code Review                  │  │
+│                                     │  └─────────────────────────────────────┘  │
+│                                     │                                           │
+│                                     │  [←/→] Week  [↑/↓] Select  [Enter] Pick   │
+├─────────────────────────────────────┴───────────────────────────────────────────┤
+│ IPC: /tmp/canvas-calendar-1.sock                              ← Unix Socket →  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
 ## Overview
 
 TUI toolkit providing interactive terminal canvases (calendar, document, flight) spawned via tmux split panes. Designed for seamless integration with OpenCode's AI-assisted development workflow.
