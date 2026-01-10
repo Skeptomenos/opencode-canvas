@@ -186,3 +186,28 @@ Started: Sat Jan 10 09:45:40 CET 2026
   - Editor uses onCleanup pattern - not needed in current impl but good to remember for future
   - Text elements in OpenTUI don't support backgroundColor - wrap in box for background colors
 ---
+
+## Sat Jan 10 2026 - US-013
+- What was implemented: Added --edit flag to CLI for opening documents in edit mode
+- Files changed:
+  - src/cli.ts (added --edit flag and logic)
+  - src/canvases/document/types.ts (added editable and filePath to DocumentConfig)
+  - src/canvases/index.tsx (passed editable and filePath props to Document)
+- **Learnings for future iterations:**
+  - The --file flag already passes filePath to config for document canvas
+  - DocumentConfig interface in document/types.ts is the place to add config options
+  - renderDocument in canvases/index.tsx needs to explicitly pass props from config to Document
+  - Combined flags work: --file and --edit can be used together
+---
+
+## Sat Jan 10 2026 - US-014
+- What was implemented: Status bar with cursor position and mode-aware coloring
+- Files changed:
+  - src/canvases/editor/editor.tsx (updated statusBar() formatting)
+- **Learnings for future iterations:**
+  - Status bar format: "-- MODE -- filename * Line X/Y Col Z"
+  - dirtyIndicator uses " *" with leading space when file has unsaved changes
+  - statusParts array builds status bar components conditionally (readOnly only shown if set)
+  - statusBarColor memo: insert="#00aa00" (green), normal="#808080" (gray)
+  - Real-time updates via createMemo() reactive pattern
+---

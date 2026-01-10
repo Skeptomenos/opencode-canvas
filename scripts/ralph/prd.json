@@ -211,7 +211,7 @@
         "Typecheck passes"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "CLI convenience. Simple flag addition."
     },
     {
@@ -226,7 +226,7 @@
         "Typecheck passes"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "Polish story. Important for user orientation."
     }
   ]
