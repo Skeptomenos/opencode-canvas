@@ -1,4 +1,4 @@
-import { createSignal, createMemo, For, onMount, onCleanup } from "solid-js"
+import { createSignal, createMemo, Index, For, Show, onMount, onCleanup } from "solid-js"
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import { TextAttributes } from "@opentui/core"
 import { createEditorState, getEditorContent, getCurrentLine, type EditorState } from "./editor-state"
@@ -317,13 +317,13 @@ export function Editor(props: EditorProps) {
         return
       }
 
-      if (key.name === "h") {
+      if (key.name === "h" || key.name === "left") {
         setEditorState((s) => moveLeft(s))
         ensureCursorVisible()
         setLastKey("h")
         return
       }
-      if (key.name === "l") {
+      if (key.name === "l" || key.name === "right") {
         setEditorState((s) => moveRight(s))
         ensureCursorVisible()
         setLastKey("l")
@@ -655,39 +655,45 @@ export function Editor(props: EditorProps) {
       </box>
 
       <scrollbox height={visibleHeight()} flexGrow={1}>
-        <For each={visibleLines()}>
+        <Index each={visibleLines()}>
           {(line, i) => {
-            const actualLineIndex = scrollOffset() + i()
-            const state = editorState()
-            const isCursor = actualLineIndex === state.cursorLine
+            const actualLineIndex = () => scrollOffset() + i
+            const isCursorLine = () => actualLineIndex() === editorState().cursorLine
+            const cursorCol = () => editorState().cursorCol
 
             const lineNumWidth = 5
-            const maxLineWidth = dimensions().width - lineNumWidth - 2
-            const displayLine = line.length > maxLineWidth ? line.slice(0, maxLineWidth - 1) + "…" : line
-
-            const cursorCol = state.cursorCol
-            const lineContent = displayLine || " "
+            const maxLineWidth = () => dimensions().width - lineNumWidth - 2
+            const displayLine = () => {
+              const l = line()
+              return l.length > maxLineWidth() ? l.slice(0, maxLineWidth() - 1) + "…" : l
+            }
+            const lineContent = () => displayLine() || " "
 
             return (
-              <box flexDirection="row" backgroundColor={isCursor ? "#333366" : undefined} width={dimensions().width}>
-                <text fg="#555555">{(actualLineIndex + 1).toString().padStart(4)} </text>
-                {isCursor ? (
+              <box
+                flexDirection="row"
+                backgroundColor={isCursorLine() ? "#333366" : undefined}
+                width={dimensions().width}
+              >
+                <text fg="#555555">{(actualLineIndex() + 1).toString().padStart(4)} </text>
+                <Show
+                  when={isCursorLine()}
+                  fallback={<text fg="#ffffff">{lineContent()}</text>}
+                >
                   <box flexDirection="row">
-                    <text fg="#ffffff">{lineContent.slice(0, cursorCol)}</text>
+                    <text fg="#ffffff">{lineContent().slice(0, cursorCol())}</text>
                     <box backgroundColor="#ffffff">
                       <text fg="#000000" attributes={TextAttributes.BOLD}>
-                        {lineContent[cursorCol] ?? " "}
+                        {lineContent()[cursorCol()] ?? " "}
                       </text>
                     </box>
-                    <text fg="#ffffff">{lineContent.slice(cursorCol + 1)}</text>
+                    <text fg="#ffffff">{lineContent().slice(cursorCol() + 1)}</text>
                   </box>
-                ) : (
-                  <text fg="#ffffff">{lineContent}</text>
-                )}
+                </Show>
               </box>
             )
           }}
-        </For>
+        </Index>
       </scrollbox>
 
       <box paddingLeft={1} paddingRight={1} backgroundColor="#222222">

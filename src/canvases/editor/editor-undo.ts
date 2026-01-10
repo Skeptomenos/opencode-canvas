@@ -116,9 +116,9 @@ export function performRedo(
 
   const newEditorState: EditorState = {
     ...editorState,
-    lines: [...operation.beforeLines],
-    cursorLine: operation.beforeCursorLine,
-    cursorCol: operation.beforeCursorCol,
+    lines: [...operation.afterLines],
+    cursorLine: operation.afterCursorLine,
+    cursorCol: operation.afterCursorCol,
     isDirty: true,
   }
 

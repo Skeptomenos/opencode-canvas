@@ -78,10 +78,7 @@ export function pasteAfter(editorState: EditorState, clipboardState: ClipboardSt
 
   const newLines = [...editorState.lines]
   const insertIndex = editorState.cursorLine + 1
-
-  for (let i = clipboardState.content.lines.length - 1; i >= 0; i--) {
-    newLines.splice(insertIndex, 0, clipboardState.content.lines[i] ?? "")
-  }
+  newLines.splice(insertIndex, 0, ...clipboardState.content.lines)
 
   return {
     ...editorState,
@@ -107,10 +104,7 @@ export function pasteBefore(editorState: EditorState, clipboardState: ClipboardS
 
   const newLines = [...editorState.lines]
   const insertIndex = editorState.cursorLine
-
-  for (let i = clipboardState.content.lines.length - 1; i >= 0; i--) {
-    newLines.splice(insertIndex, 0, clipboardState.content.lines[i] ?? "")
-  }
+  newLines.splice(insertIndex, 0, ...clipboardState.content.lines)
 
   return {
     ...editorState,

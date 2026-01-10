@@ -59,21 +59,29 @@ export function getConfirmationPrompt(filePath: string | null): string {
 }
 
 export async function createBackup(filePath: string): Promise<boolean> {
-  const backupPath = `${filePath}.bak`
-  const file = Bun.file(filePath)
+  try {
+    const backupPath = `${filePath}.bak`
+    const file = Bun.file(filePath)
 
-  if (!(await file.exists())) {
+    if (!(await file.exists())) {
+      return true
+    }
+
+    const content = await file.text()
+    await Bun.write(backupPath, content)
     return true
+  } catch {
+    return false
   }
-
-  const content = await file.text()
-  await Bun.write(backupPath, content)
-  return true
 }
 
 export async function saveFile(filePath: string, content: string): Promise<boolean> {
-  await Bun.write(filePath, content)
-  return true
+  try {
+    await Bun.write(filePath, content)
+    return true
+  } catch {
+    return false
+  }
 }
 
 export async function performSave(state: EditorState): Promise<{ success: boolean; error?: string }> {

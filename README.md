@@ -1,6 +1,11 @@
 # OpenCode Canvas
 
-Interactive terminal canvases for OpenCode. A port of [claude-canvas](https://github.com/dvdsgl/claude-canvas) from React/Ink to SolidJS/OpenTUI.
+Interactive terminal canvases for OpenCode. Inspired by claude-canvas, ported from React/Ink to SolidJS/OpenTUI.
+
+- OpenCode: https://github.com/sst/opencode
+- claude-canvas: https://github.com/dvdsgl/claude-canvas
+
+**Disclaimer**: This is an independent project. I am not affiliated with, endorsed by, or connected to either the OpenCode or claude-canvas projects.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -31,84 +36,179 @@ Interactive terminal canvases for OpenCode. A port of [claude-canvas](https://gi
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Overview
-
-TUI toolkit providing interactive terminal canvases (calendar, document, flight) spawned via tmux split panes. Designed for seamless integration with OpenCode's AI-assisted development workflow.
-
 ## Features
 
-- **Calendar Canvas** - View calendars, pick meeting times with keyboard navigation
-- **Document Canvas** - View/edit markdown documents with scroll and selection
-- **Flight Canvas** - Compare flights and select seats (booking interface)
-- **IPC System** - Unix socket communication between canvases and controllers
-- **tmux Integration** - Spawn canvases in split panes, reuse existing panes
+- **File Browser** - Browse directories with flat list or tree view. Navigate folders, open files to view with markdown rendering.
+- **Tree View** - Expand/collapse folders inline. See your project structure at a glance.
+- **Markdown Viewer** - View markdown files with syntax highlighting for headers, bold, italic, code, links, lists, and tables.
+- **Vim-Style Editor** - Edit files with familiar vim keybindings (h/j/k/l, i/a/o, dd/yy/p, :w/:q). Includes undo/redo, save with backup, and unsaved changes warning.
+- **Calendar Canvas** - Week view calendar with time slot selection for meeting scheduling.
+- **Flight Canvas** - Compare flight options in a table format.
+- **IPC System** - Unix socket communication for programmatic control.
+- **tmux Integration** - Spawn canvases in split panes (optional).
 
 ## Requirements
 
-- [Bun](https://bun.sh) >= 1.0
-- tmux (for spawning canvases in split panes)
+- Bun >= 1.0 (https://bun.sh)
+- tmux (optional, for split pane spawning)
 
 ## Installation
 
 ```bash
+git clone https://github.com/Skeptomenos/opencode-canvas.git
+cd opencode-canvas
 bun install
 ```
 
-## Usage
+## Quick Start
+
+### Browse Files (Most Common Use)
 
 ```bash
-# Show canvas in current terminal
-bun run src/cli.ts show calendar
-bun run src/cli.ts show document --config '{"content": "# Hello World"}'
+# Browse current directory (flat list)
+bun run src/cli.ts browse
 
-# Spawn canvas in tmux split pane
-bun run src/cli.ts spawn calendar --scenario meeting-picker
+# Browse with tree view (expand/collapse folders)
+bun run src/cli.ts browse --tree
 
-# Check terminal environment
-bun run src/cli.ts env
+# Browse a specific path
+bun run src/cli.ts browse ~/Projects
+bun run src/cli.ts browse /path/to/folder
+
+# Show hidden files
+bun run src/cli.ts browse --hidden
+bun run src/cli.ts browse --tree --hidden
 ```
 
-## Development
+### File Browser Controls
+
+Flat view:
+
+- Up/Down or j/k - Navigate
+- Enter or Right - Open file or enter folder
+- Left or Backspace - Go to parent directory
+- Period - Toggle hidden files
+- Tilde - Go to home directory
+- q - Quit
+
+Tree view:
+
+- Up/Down - Navigate
+- Enter - Expand folder or open file
+- Right - Expand folder
+- Left - Collapse folder or go to parent
+- Backspace - Go up one directory level
+- Period - Toggle hidden files
+- q - Quit
+
+When viewing a file, press q or Escape to return to the browser.
+
+### Edit a File
 
 ```bash
-# Type checking
-bun run typecheck
+# Open file directly in edit mode
+bun run src/cli.ts show document --file README.md --edit
 
-# Run tests
-bun test
+# Or from the file browser, files open in edit mode by default
+bun run src/cli.ts browse
+```
 
-# Formatting
-bun run format          # Format all files
-bun run format:check    # Check formatting
-bun run lint            # Format check + typecheck
+Editor Controls (Normal Mode):
 
-# Build for production
-bun run build
+- h/l or Left/Right - Move cursor left/right
+- j/k or Up/Down - Move cursor up/down
+- w/b - Move by word
+- 0/$ - Start/end of line
+- gg/G - First/last line
+- i/a - Enter insert mode (before/after cursor)
+- o/O - Open line below/above
+- x - Delete character
+- dd - Delete line
+- yy - Yank (copy) line
+- p/P - Paste after/before
+- u - Undo
+- Ctrl+R - Redo
+- :w - Save
+- :q - Quit
+- :wq - Save and quit
+- :q! - Quit without saving
+
+Editor Controls (Insert Mode):
+
+- Type to insert text
+- Backspace - Delete character before cursor
+- Enter - New line
+- Arrow keys - Navigate
+- Escape - Return to normal mode
+- Ctrl+S - Save
+
+Read-only files (node_modules, .git, binary, >1MB) show a warning and cannot be edited.
+
+### View a Single File
+
+```bash
+bun run src/cli.ts show document --file README.md
+bun run src/cli.ts show document --file ~/notes.md
+```
+
+### Calendar Canvas
+
+```bash
+bun run src/cli.ts show calendar
+```
+
+Controls:
+
+- Left/Right - Previous/next week
+- Up/Down - Select time slot
+- t - Jump to today
+- Enter - Confirm selection
+- q - Quit
+
+### Flight Canvas
+
+```bash
+bun run src/cli.ts show flight --config '{"origin":"SFO","destination":"JFK","flights":[{"id":"1","airline":"United","flightNumber":"UA123","departure":"08:00","arrival":"16:30","duration":"5h30m","price":450,"stops":0}]}'
+```
+
+Controls:
+
+- Up/Down - Select flight
+- Enter - Book selected
+- q - Quit
+
+### Spawn in tmux
+
+If running inside tmux, spawn canvases in a split pane:
+
+```bash
+bun run src/cli.ts spawn calendar
+bun run src/cli.ts env  # Check if in tmux
 ```
 
 ## Programmatic API
 
 ```typescript
-import { pickMeetingTime, editDocument, bookFlight } from "./src/api"
+import { pickMeetingTime, viewDocument, bookFlight } from "./src/api"
 
-// Pick a meeting time slot
-const meetingResult = await pickMeetingTime({
+// Pick a meeting time
+const meeting = await pickMeetingTime({
   events: [{ id: "1", title: "Standup", start: "2025-01-10T09:00", end: "2025-01-10T09:30" }],
   slotGranularity: 30,
 })
 
-if (meetingResult.success && meetingResult.data) {
-  console.log(`Selected: ${meetingResult.data.startTime}`)
+if (meeting.success) {
+  console.log("Selected:", meeting.data.startTime)
 }
 
-// Edit a document
-const docResult = await editDocument({
-  content: "# My Document\n\nEdit this...",
-  title: "Notes",
+// View a document
+const doc = await viewDocument({
+  content: "# Hello\n\nThis is **markdown** content.",
+  title: "My Doc",
 })
 
 // Book a flight
-const flightResult = await bookFlight({
+const flight = await bookFlight({
   origin: "SFO",
   destination: "JFK",
   flights: [
@@ -126,80 +226,79 @@ const flightResult = await bookFlight({
 })
 ```
 
-## Skills
+## Markdown Rendering
 
-OpenCode skill definitions are in `skills/`:
+The document viewer renders markdown with:
 
-- `skills/canvas/SKILL.md` - General canvas system overview
-- `skills/calendar/SKILL.md` - Calendar canvas usage
-- `skills/document/SKILL.md` - Document canvas usage
-- `skills/flight/SKILL.md` - Flight canvas usage
+- Headers (h1-h4) in cyan/teal with bold
+- Bold text
+- Italic text
+- Inline code in orange
+- Links in blue
+- Block quotes with gray bar
+- Bullet and numbered lists
+- Tables with parsed cell content
+- Code blocks in orange
+- Horizontal rules
 
-## Keyboard Shortcuts
+## Development
 
-### Calendar
-
-| Key     | Action             |
-| ------- | ------------------ |
-| `←`/`→` | Previous/next week |
-| `↑`/`↓` | Select time slot   |
-| `t`     | Jump to today      |
-| `Enter` | Confirm selection  |
-| `q`     | Quit               |
-
-### Document
-
-| Key      | Action           |
-| -------- | ---------------- |
-| `↑`/`↓`  | Scroll           |
-| `Ctrl+S` | Save (edit mode) |
-| `q`      | Quit             |
-
-### Flight
-
-| Key     | Action        |
-| ------- | ------------- |
-| `↑`/`↓` | Select flight |
-| `Enter` | Book selected |
-| `q`     | Quit          |
+```bash
+bun run typecheck    # Type checking
+bun test             # Run tests (6 tests)
+bun run format       # Format code
+bun run lint         # Format + typecheck
+```
 
 ## Architecture
 
 ```
 src/
-├── cli.ts           # CLI entry point (show/spawn/env commands)
-├── terminal.ts      # tmux detection and pane spawning
-├── canvases/        # Canvas components (calendar, document, flight)
-├── ipc/             # Unix socket IPC (server, client, types)
-└── api/             # High-level programmatic API
-
-skills/              # OpenCode skill definitions
+├── cli.ts                    # CLI (show, spawn, browse, env)
+├── terminal.ts               # tmux spawning with lock management
+├── canvases/
+│   ├── browser.tsx           # Flat file browser
+│   ├── tree-browser.tsx      # Tree view file browser
+│   ├── file-viewer.tsx       # Browser + document viewer
+│   ├── tree-file-viewer.tsx  # Tree browser + document viewer
+│   ├── document.tsx          # Markdown document viewer
+│   ├── markdown-renderer.tsx # Markdown parsing and rendering
+│   ├── calendar.tsx          # Calendar week view
+│   ├── flight.tsx            # Flight comparison
+│   └── editor/               # Vim-style text editor
+│       ├── editor.tsx        # Main editor component
+│       ├── editor-state.ts   # State management
+│       ├── editor-navigation.ts # Cursor movement
+│       ├── editor-insert.ts  # Insert mode operations
+│       ├── editor-clipboard.ts # Yank/paste
+│       ├── editor-undo.ts    # Undo/redo stack
+│       ├── editor-save.ts    # Save with backup
+│       ├── editor-quit.ts    # Quit with unsaved warning
+│       ├── editor-command.ts # :w/:q command parsing
+│       └── editor-readonly.ts # Read-only detection
+├── ipc/                      # Unix socket IPC
+└── api/                      # Programmatic API
 ```
 
 ## IPC Protocol
 
-Canvases communicate via Unix sockets at `/tmp/canvas-{id}.sock`
+Canvases communicate via Unix sockets at /tmp/canvas-{id}.sock
 
-**Canvas → Controller:**
-
-- `ready` - Canvas initialized
-- `selected` - User made a selection
-- `cancelled` - User cancelled
-- `error` - Error occurred
-
-**Controller → Canvas:**
-
-- `update` - Update canvas configuration
-- `close` - Close the canvas
-- `ping` / `pong` - Health check
-- `getSelection` / `getContent` - Query canvas state
+Canvas to Controller: ready, selected, cancelled, error
+Controller to Canvas: update, close, ping, getSelection, getContent
 
 ## Tech Stack
 
-- **Runtime**: Bun
-- **UI Framework**: SolidJS + @opentui/solid
-- **CLI**: Commander.js
-- **IPC**: Unix domain sockets (Bun.listen/Bun.connect)
+- Runtime: Bun
+- UI: SolidJS + @opentui/solid
+- CLI: Commander.js
+- IPC: Unix domain sockets
+
+## Credits
+
+- Inspired by claude-canvas (https://github.com/dvdsgl/claude-canvas) by David Siegel
+- Built for OpenCode (https://github.com/sst/opencode) by SST
+- Uses OpenTUI (https://github.com/sst/opentui)
 
 ## License
 
