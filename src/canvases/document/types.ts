@@ -4,6 +4,8 @@ export interface DocumentConfig {
   format?: "markdown" | "plain" | "email"
   readOnly?: boolean
   emailHeaders?: EmailHeaders
+  editable?: boolean
+  filePath?: string
 }
 
 export interface EmailHeaders {
