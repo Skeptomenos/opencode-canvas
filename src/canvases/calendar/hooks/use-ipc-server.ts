@@ -1,7 +1,7 @@
 import { createSignal, onMount, onCleanup } from "solid-js"
 import { useRenderer } from "@opentui/solid"
 import { createIPCServer, type IPCServer } from "@/ipc/server"
-import type { ControllerMessage } from "@/ipc/types"
+import { isControllerMessage } from "@/ipc/types"
 
 export interface UseIPCServerOptions {
   socketPath: string | undefined
@@ -30,7 +30,12 @@ export function useIPCServer(options: UseIPCServerOptions): IPCServerHandle {
 
     server = await createIPCServer({
       socketPath: options.socketPath,
-      onMessage: (msg: ControllerMessage) => {
+      onMessage: (msg) => {
+        if (!isControllerMessage(msg)) {
+          console.error("Invalid controller message format:", msg)
+          return
+        }
+
         switch (msg.type) {
           case "close":
             options.onClose?.()

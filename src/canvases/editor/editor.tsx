@@ -1,8 +1,8 @@
-import { createSignal, createMemo, Index, For, Show, onMount, onCleanup, createEffect } from "solid-js"
+import { createSignal, createMemo, Index, For, Show, onMount, onCleanup } from "solid-js"
 import type { ScrollBoxRenderable, MouseEvent } from "@opentui/core"
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import { TextAttributes } from "@opentui/core"
-import { createEditorState, getEditorContent, getCurrentLine, type EditorState } from "./editor-state"
+import { createEditorState, type EditorState } from "./editor-state"
 import { wrapLines, findDisplayLineIndex, type WrappedLine } from "../word-wrap"
 import { checkReadOnly, getReadOnlyReasonMessage, getReadOnlyStatusIndicator } from "./editor-readonly"
 import {
@@ -188,10 +188,20 @@ export function Editor(props: EditorProps) {
     }
   }
 
+  let messageTimeoutId: ReturnType<typeof setTimeout> | null = null
+
   const showTemporaryMessage = (message: string, duration = 2000) => {
+    if (messageTimeoutId) clearTimeout(messageTimeoutId)
     setStatusMessage(message)
-    setTimeout(() => setStatusMessage(null), duration)
+    messageTimeoutId = setTimeout(() => {
+      setStatusMessage(null)
+      messageTimeoutId = null
+    }, duration)
   }
+
+  onCleanup(() => {
+    if (messageTimeoutId) clearTimeout(messageTimeoutId)
+  })
 
   useKeyboard(async (key) => {
     const state = editorState()

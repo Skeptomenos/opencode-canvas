@@ -27,6 +27,26 @@ export interface ContentData {
   cursorPosition: number
 }
 
+const SOCKET_DIR = process.env.CANVAS_SOCKET_DIR || process.env.XDG_RUNTIME_DIR || "/tmp"
+
 export function getSocketPath(id: string): string {
-  return `/tmp/canvas-${id}.sock`
+  return `${SOCKET_DIR}/canvas-${id}.sock`
+}
+
+const CANVAS_MESSAGE_TYPES = ["ready", "selected", "cancelled", "error", "pong", "selection", "content"] as const
+
+export function isCanvasMessage(msg: unknown): msg is CanvasMessage {
+  if (typeof msg !== "object" || msg === null) return false
+  const m = msg as Record<string, unknown>
+  return typeof m.type === "string" && CANVAS_MESSAGE_TYPES.includes(m.type as (typeof CANVAS_MESSAGE_TYPES)[number])
+}
+
+const CONTROLLER_MESSAGE_TYPES = ["close", "update", "ping", "getSelection", "getContent"] as const
+
+export function isControllerMessage(msg: unknown): msg is ControllerMessage {
+  if (typeof msg !== "object" || msg === null) return false
+  const m = msg as Record<string, unknown>
+  return (
+    typeof m.type === "string" && CONTROLLER_MESSAGE_TYPES.includes(m.type as (typeof CONTROLLER_MESSAGE_TYPES)[number])
+  )
 }

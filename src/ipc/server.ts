@@ -1,10 +1,10 @@
 import { unlinkSync, existsSync } from "fs"
-import type { ControllerMessage, CanvasMessage } from "./types"
+import type { CanvasMessage } from "./types"
 import type { Socket } from "bun"
 
 export interface IPCServerOptions {
   socketPath: string
-  onMessage: (msg: ControllerMessage) => void
+  onMessage: (msg: unknown) => void
   onClientConnect?: () => void
   onClientDisconnect?: () => void
   onError?: (error: Error) => void
@@ -18,29 +18,33 @@ export interface IPCServer {
 export async function createIPCServer(options: IPCServerOptions): Promise<IPCServer> {
   const { socketPath, onMessage, onClientConnect, onClientDisconnect, onError } = options
 
+  // Clean up stale socket from previous process (handles SIGKILL/crash scenarios)
   if (existsSync(socketPath)) {
     unlinkSync(socketPath)
   }
 
   const clients = new Set<Socket<unknown>>()
-  let buffer = ""
+  const socketBuffers = new Map<Socket<unknown>, string>()
 
   const server = Bun.listen({
     unix: socketPath,
     socket: {
       open(socket) {
         clients.add(socket)
+        socketBuffers.set(socket, "")
         onClientConnect?.()
       },
-      data(_socket, data) {
-        buffer += data.toString()
-        const lines = buffer.split("\n")
-        buffer = lines.pop() || ""
+      data(socket, data) {
+        const currentBuffer = socketBuffers.get(socket) || ""
+        const newBuffer = currentBuffer + data.toString()
+        const lines = newBuffer.split("\n")
+        const remainingBuffer = lines.pop() || ""
+        socketBuffers.set(socket, remainingBuffer)
 
         for (const line of lines) {
           if (line.trim()) {
             try {
-              const msg = JSON.parse(line) as ControllerMessage
+              const msg: unknown = JSON.parse(line)
               onMessage(msg)
             } catch (e) {
               onError?.(new Error(`Failed to parse: ${line}`))
@@ -50,6 +54,7 @@ export async function createIPCServer(options: IPCServerOptions): Promise<IPCSer
       },
       close(socket) {
         clients.delete(socket)
+        socketBuffers.delete(socket)
         onClientDisconnect?.()
       },
       error(_socket, error) {

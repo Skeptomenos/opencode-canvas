@@ -3,6 +3,8 @@ import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import { TextAttributes } from "@opentui/core"
 import type { ScrollBoxRenderable } from "@opentui/core"
 import { useIPCServer } from "./calendar/hooks/use-ipc-server"
+import { isDirectory, formatSize } from "./utils/fs-utils"
+import { getFileIcon } from "./utils/file-utils"
 
 export interface BrowserConfig {
   path?: string
@@ -52,51 +54,6 @@ async function readDirectory(dirPath: string, showHidden: boolean): Promise<File
   })
 
   return entries
-}
-
-async function isDirectory(path: string): Promise<boolean> {
-  try {
-    const proc = Bun.spawnSync(["test", "-d", path])
-    return proc.exitCode === 0
-  } catch {
-    return false
-  }
-}
-
-function formatSize(bytes: number): string {
-  if (bytes === 0) return ""
-  if (bytes < 1024) return `${bytes}B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}K`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)}M`
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}G`
-}
-
-function getFileIcon(entry: FileEntry): string {
-  if (entry.isDirectory) return "[D]"
-  const ext = entry.name.split(".").pop()?.toLowerCase() || ""
-  const icons: Record<string, string> = {
-    md: "[M]",
-    txt: "[T]",
-    ts: "[S]",
-    tsx: "[X]",
-    js: "[J]",
-    jsx: "[X]",
-    json: "[N]",
-    yaml: "[Y]",
-    yml: "[Y]",
-    css: "[C]",
-    html: "[H]",
-    png: "[I]",
-    jpg: "[I]",
-    jpeg: "[I]",
-    gif: "[I]",
-    svg: "[I]",
-    pdf: "[P]",
-    zip: "[Z]",
-    tar: "[Z]",
-    gz: "[Z]",
-  }
-  return icons[ext] || "[F]"
 }
 
 export function FileBrowser(props: BrowserProps) {
@@ -289,7 +246,7 @@ export function FileBrowser(props: BrowserProps) {
                   width={dimensions().width}
                   paddingLeft={1}
                 >
-                  <text fg="#888888">{getFileIcon(entry)} </text>
+                  <text fg="#888888">{getFileIcon(entry.name, entry.isDirectory)} </text>
                   <text
                     attributes={isSelected() ? TextAttributes.BOLD : 0}
                     fg={entry.isDirectory ? "#00aaff" : "#ffffff"}

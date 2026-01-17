@@ -1,6 +1,6 @@
 import { createIPCServer, type IPCServer } from "@/ipc/server"
 import { createIPCClient, type IPCClient } from "@/ipc/client"
-import { getSocketPath, type CanvasMessage } from "@/ipc/types"
+import { getSocketPath, isCanvasMessage, type CanvasMessage } from "@/ipc/types"
 import { spawnCanvas } from "@/terminal"
 import type { CalendarConfig, SelectedSlot } from "@/canvases/calendar/types"
 import type { DocumentConfig, DocumentSelection } from "@/canvases/document/types"
@@ -45,42 +45,53 @@ export async function spawnCanvasWithIPC<TConfig, TResult>(
       resolve(result)
     }
 
-    createIPCServer({
-      socketPath,
-      onMessage(msg) {
-        const canvasMsg = msg as unknown as CanvasMessage
+    const initializeCanvas = async () => {
+      try {
+        server = await createIPCServer({
+          socketPath,
+          onMessage(msg) {
+            if (!isCanvasMessage(msg)) {
+              console.error("Invalid canvas message format:", msg)
+              return
+            }
 
-        switch (canvasMsg.type) {
-          case "ready":
-            onReady?.()
-            break
-          case "selected":
-            handleResolve({ success: true, data: canvasMsg.data as TResult })
-            break
-          case "cancelled":
-            handleResolve({ success: true, cancelled: true })
-            break
-          case "error":
-            handleResolve({ success: false, error: canvasMsg.message })
-            break
-        }
-      },
-      onClientDisconnect() {
-        if (!resolved) {
-          handleResolve({ success: false, error: "Canvas disconnected" })
-        }
-      },
-    }).then((s) => {
-      server = s
-    })
+            switch (msg.type) {
+              case "ready":
+                onReady?.()
+                break
+              case "selected":
+                handleResolve({ success: true, data: msg.data as TResult })
+                break
+              case "cancelled":
+                handleResolve({ success: true, cancelled: true })
+                break
+              case "error":
+                handleResolve({ success: false, error: msg.message })
+                break
+            }
+          },
+          onClientDisconnect() {
+            if (!resolved) {
+              handleResolve({ success: false, error: "Canvas disconnected" })
+            }
+          },
+        })
+
+        await spawnCanvas(kind, id, JSON.stringify(config), { socketPath, scenario })
+      } catch (err) {
+        cleanup()
+        handleResolve({
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
+    }
 
     timeoutId = setTimeout(() => {
       handleResolve({ success: false, error: "Timeout" })
     }, timeout)
 
-    spawnCanvas(kind, id, JSON.stringify(config), { socketPath, scenario }).catch((err) => {
-      handleResolve({ success: false, error: err.message })
-    })
+    initializeCanvas()
   })
 }
 

@@ -208,6 +208,7 @@ async function reuseExistingPane(paneId: string, command: string): Promise<boole
   })
 }
 
+/** Future API: Close the canvas pane programmatically */
 export async function closeCanvasPane(): Promise<boolean> {
   const paneId = await getCanvasPaneId()
   if (!paneId) return false

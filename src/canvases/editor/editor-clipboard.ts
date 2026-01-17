@@ -131,10 +131,6 @@ export function pasteBefore(editorState: EditorState, clipboardState: ClipboardS
   }
 }
 
-export function hasClipboardContent(clipboardState: ClipboardState): boolean {
-  return clipboardState.content !== null
-}
-
 export function shouldTriggerYankLine(
   key: { ctrl?: boolean; name?: string; sequence?: string },
   lastKey: string | null

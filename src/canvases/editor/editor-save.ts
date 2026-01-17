@@ -53,11 +53,6 @@ export function clearMessage(saveState: SaveState): SaveState {
   }
 }
 
-export function getConfirmationPrompt(filePath: string | null): string {
-  const fileName = filePath ?? "untitled"
-  return `Save changes to ${fileName}? [y/n]`
-}
-
 export async function createBackup(filePath: string): Promise<boolean> {
   try {
     const backupPath = `${filePath}.bak`
@@ -121,8 +116,4 @@ export function shouldTriggerSave(key: { name?: string; ctrl?: boolean; sequence
     return true
   }
   return false
-}
-
-export function isColonWCommand(commandBuffer: string): boolean {
-  return commandBuffer === ":w"
 }

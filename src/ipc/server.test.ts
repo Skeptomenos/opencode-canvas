@@ -1,4 +1,4 @@
-import { describe, test, expect, afterEach, beforeEach } from "bun:test"
+import { describe, test, expect, afterEach } from "bun:test"
 import { createIPCServer } from "./server"
 import { createIPCClient } from "./client"
 import { getSocketPath } from "./types"

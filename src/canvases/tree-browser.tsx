@@ -3,6 +3,7 @@ import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import { TextAttributes } from "@opentui/core"
 import type { ScrollBoxRenderable } from "@opentui/core"
 import { useIPCServer } from "./calendar/hooks/use-ipc-server"
+import { isDirectory, formatSize } from "./utils/fs-utils"
 
 export interface TreeBrowserConfig {
   path?: string
@@ -63,24 +64,7 @@ async function readDirectory(dirPath: string, showHidden: boolean): Promise<Tree
   return entries
 }
 
-async function isDirectory(path: string): Promise<boolean> {
-  try {
-    const proc = Bun.spawnSync(["test", "-d", path])
-    return proc.exitCode === 0
-  } catch {
-    return false
-  }
-}
-
-function formatSize(bytes: number): string {
-  if (bytes === 0) return ""
-  if (bytes < 1024) return `${bytes}B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}K`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)}M`
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}G`
-}
-
-function getFileIcon(node: TreeNode): string {
+function getTreeFileIcon(node: TreeNode): string {
   if (node.isDirectory) {
     return node.expanded ? "[-]" : "[+]"
   }
@@ -328,7 +312,7 @@ export function TreeBrowser(props: TreeBrowserProps) {
                   paddingLeft={1}
                 >
                   <text fg="#444444">{indent}</text>
-                  <text fg="#888888">{getFileIcon(node)} </text>
+                  <text fg="#888888">{getTreeFileIcon(node)} </text>
                   <text
                     attributes={isSelected() ? TextAttributes.BOLD : 0}
                     fg={node.isDirectory ? "#00aaff" : "#ffffff"}

@@ -49,21 +49,3 @@ export function getEditorContent(state: EditorState): string {
 export function getCurrentLine(state: EditorState): string {
   return state.lines[state.cursorLine] ?? ""
 }
-
-export function clampCursorCol(state: EditorState): number {
-  const line = getCurrentLine(state)
-  const maxCol = state.mode === "insert" ? line.length : Math.max(0, line.length - 1)
-  return Math.max(0, Math.min(state.cursorCol, maxCol))
-}
-
-export function markLinesDirty(state: EditorState, lineIndices: number[]): EditorState {
-  const newDirtyLines = new Set(state.dirtyLines)
-  for (const idx of lineIndices) {
-    newDirtyLines.add(idx)
-  }
-  return { ...state, dirtyLines: newDirtyLines }
-}
-
-export function clearDirtyLines(state: EditorState): EditorState {
-  return { ...state, dirtyLines: new Set<number>() }
-}

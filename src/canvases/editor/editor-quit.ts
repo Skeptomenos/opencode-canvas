@@ -93,8 +93,3 @@ export async function handleSaveAndQuit(
 export function getTitleWithDirtyIndicator(title: string, isDirty: boolean): string {
   return isDirty ? `${title} *` : title
 }
-
-export function getFilenameWithDirtyIndicator(filePath: string | null, isDirty: boolean): string {
-  const filename = filePath ?? "untitled"
-  return isDirty ? `${filename} *` : filename
-}

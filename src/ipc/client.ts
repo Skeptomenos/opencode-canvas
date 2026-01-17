@@ -18,21 +18,19 @@ export interface IPCClient {
 export async function createIPCClient(options: IPCClientOptions): Promise<IPCClient> {
   const { socketPath, onMessage, onConnect, onDisconnect, onError } = options
 
-  let buffer = ""
-  let connected = false
-  let socket: Socket<unknown> | null = null
+  const state = { buffer: "", connected: false }
 
-  socket = await Bun.connect({
+  const socket = await Bun.connect({
     unix: socketPath,
     socket: {
       open() {
-        connected = true
+        state.connected = true
         onConnect?.()
       },
       data(_socket, data) {
-        buffer += data.toString()
-        const lines = buffer.split("\n")
-        buffer = lines.pop() || ""
+        state.buffer += data.toString()
+        const lines = state.buffer.split("\n")
+        state.buffer = lines.pop() || ""
 
         for (const line of lines) {
           if (line.trim()) {
@@ -46,7 +44,7 @@ export async function createIPCClient(options: IPCClientOptions): Promise<IPCCli
         }
       },
       close() {
-        connected = false
+        state.connected = false
         onDisconnect?.()
       },
       error(_socket, error) {
@@ -57,16 +55,16 @@ export async function createIPCClient(options: IPCClientOptions): Promise<IPCCli
 
   return {
     send(msg: ControllerMessage) {
-      if (socket && connected) {
+      if (socket && state.connected) {
         socket.write(JSON.stringify(msg) + "\n")
       }
     },
     close() {
       socket?.end()
-      connected = false
+      state.connected = false
     },
     isConnected() {
-      return connected
+      return state.connected
     },
   }
 }
